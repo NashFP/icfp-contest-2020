@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Parse(parseFile) where
+module Parse(parseFile, repl, Env) where
 
 import Text.Parsec
 import Text.Parsec.Char
@@ -97,3 +97,12 @@ parseFile filename =
   do input <- readFile filename
      return $ evaluateFile filename input
 
+
+repl :: Env -> IO ()
+repl env = do
+  putStrLn "*>"
+  line <- getLine
+  case runParser (expression env) () "<stdin>" line of
+    Left errors -> putStrLn $ "syntax error: " ++ show errors
+    Right value -> putStrLn $ show value
+  repl env
