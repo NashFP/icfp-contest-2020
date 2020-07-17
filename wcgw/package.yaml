@@ -21,6 +21,7 @@ description:         Please see the README on GitHub at <https://github.com/jore
 
 dependencies:
 - base >= 4.7 && < 5
+- HTTP >= 4000
 
 library:
   source-dirs: src
