@@ -1,0 +1,62 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 9e2072613def5ebda8b7d761410f0386b1badcbfa85fe63ef0ea2819088a5e54
+
+name:           wcgw
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/jorendorff/wcgw#readme>
+homepage:       https://github.com/jorendorff/wcgw#readme
+bug-reports:    https://github.com/jorendorff/wcgw/issues
+author:         Jason Orendorff
+maintainer:     jason.orendorff@gmail.com
+copyright:      2020 Jason Orendorff
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/jorendorff/wcgw
+
+library
+  exposed-modules:
+      Lib
+  other-modules:
+      Paths_wcgw
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+  default-language: Haskell2010
+
+executable wcgw-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_wcgw
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , wcgw
+  default-language: Haskell2010
+
+test-suite wcgw-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_wcgw
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , wcgw
+  default-language: Haskell2010
