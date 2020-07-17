@@ -19,9 +19,9 @@ prettyPrintEquation (name, value) = name ++ " = " ++ show value ++ "\n"
 
 main = do
   args <- getArgs
-  variables <- parseFile (args!!0)
-  putStrLn $ concat $ fmap prettyPrintEquation $ Map.toList $ variables
-
+  env <- parseFile (args!!0)
+  putStrLn $ concat $ fmap prettyPrintEquation $ Map.toList $ env
+  repl env
 
 -- stack run "https://icfpc2020-api.testkontur.ru/aliens/send?apiKey=$API_KEY" "1101000"
 -- main = catch (

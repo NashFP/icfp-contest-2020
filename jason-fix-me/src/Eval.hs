@@ -2,15 +2,20 @@ module Eval(Value(..), ap, stdlib) where
 
 data Value =
     IntValue Integer
-  | FunValue (Value -> Value)
+  | FunValue String (Value -> Value)
   | NilValue
   | ConsValue Value Value
+
+showAsListTail :: Value -> String
+showAsListTail (ConsValue h t) = " " ++ show h ++ showAsListTail t
+showAsListTail NilValue = ""
+showAsListTail other = " . " ++ show other
 
 instance Show Value where
   show (IntValue i) = show i
   show NilValue = "nil"
-  show (ConsValue h t) = "(" ++ show h ++ " : " ++ show t ++ ")"
-  show (FunValue f) = "function () { [native code] }"
+  show (ConsValue h t) = "[" ++ show h ++ showAsListTail t ++ "]"
+  show (FunValue name f) = name
 
 class ToValue t where
   toValue :: t -> Value
@@ -25,7 +30,7 @@ instance ToValue Bool where
   toValue True = t
   toValue False = f
 
-ap (FunValue f) v = f v
+ap (FunValue _ f) v = f v
 ap (ConsValue a b) f = ap (ap f a) b
 ap NilValue x = t
 
@@ -42,10 +47,10 @@ negImpl (IntValue i) = IntValue (-i)
 negImpl other = error $ "neg: TypeError: undefined is not a function: " ++ show other
 
 binaryMathFunction :: ToValue t => String -> (Integer -> Integer -> t) -> Value
-binaryMathFunction name f = FunValue impl
+binaryMathFunction name f = FunValue name impl
   where
     impl :: Value -> Value
-    impl (IntValue i) = FunValue (impl2 i)
+    impl (IntValue i) = FunValue ("(" ++ name ++ " " ++ show i ++ ")") (impl2 i)
     impl other = error $ name ++ ": TypeError: first argument: number expected, not " ++ show other
 
     impl2 :: Integer -> Value -> Value
@@ -54,43 +59,43 @@ binaryMathFunction name f = FunValue impl
 
 
 -- s f g x = f x (g x)
-s = FunValue (\f -> FunValue (\g -> FunValue (\x -> ap (ap f x) (ap g x))))
+s = FunValue "s" (\f -> FunValue "(s _)" (\g -> FunValue "(s _ _)" (\x -> ap (ap f x) (ap g x))))
 
 -- b f g x = f (g x)
-b = FunValue (\f -> FunValue (\g -> FunValue (\x -> ap f (ap g x))))
+b = FunValue "b" (\f -> FunValue "(b _)" (\g -> FunValue "(b _ _)" (\x -> ap f (ap g x))))
 
 -- i x = x
-i = FunValue id
+i = FunValue "i" id
 
 -- t x y = x
-t = FunValue (\x -> FunValue (\y -> x))
+t = FunValue "t" (\x -> FunValue ("(t " ++ show x ++ ")") (\y -> x))
 
 -- f x y = y
-f = FunValue (\x -> FunValue (\y -> y))
+f = FunValue "f" (\x -> i)
 
 -- ap ap ap c x0 x1 x2   =   ap ap x0 x2 x1
 -- (((c x0) x1) x2)   =   ((x0 x2) x1)
 -- c x0 x1 x2   =   x0 x2 x1
 -- c f x y = f y x
-c = FunValue (\f -> FunValue (\x -> FunValue (\y -> ap (ap f y) x)))
+c = FunValue "c" (\f -> FunValue "(c _)" (\x -> FunValue "(c _ _)" (\y -> ap (ap f y) x)))
 
 -- cons a b f = f a b
-cons = FunValue (\a -> FunValue (\b -> ConsValue a b))
+cons = FunValue "cons" (\a -> FunValue ("(cons " ++ show a ++ ")") (\b -> ConsValue a b))
 
 -- car x = x t
-car = FunValue (\x -> ap x t)
+car = FunValue "car" (\x -> ap x t)
 
 -- cdr x = x f
-cdr = FunValue (\x -> ap x f)
+cdr = FunValue "cdr" (\x -> ap x f)
 
-isnil = FunValue (\x -> case x of
-                          NilValue -> t
-                          _ -> f)
+isnil = FunValue "isnil" (\x -> case x of
+                                  NilValue -> t
+                                  _ -> f)
 
-if0 = FunValue (\test -> FunValue (\a -> FunValue (\b -> if0Impl test a b)))
-if0Impl (IntValue 0) a _ = a
-if0Impl (IntValue _) _ b = b
-if0Impl other _ _ = error $ "if0: TypeError: number expected, not " ++ show other
+if0 = FunValue "if0" if0Impl
+if0Impl (IntValue 0) = t
+if0Impl (IntValue _) = f
+if0Impl other = error $ "if0: TypeError: number expected, not " ++ show other
 
 stdlib :: [(String, Value)]
 stdlib = [
@@ -104,11 +109,11 @@ stdlib = [
   ("cons", cons),
   ("car", car),
   ("cdr", cdr),
-  ("neg", FunValue negImpl),
+  ("neg", FunValue "neg" negImpl),
   ("lt", binaryMathFunction "lt" (<)),
   ("eq", binaryMathFunction "lt" (==)),
-  ("inc", FunValue incImpl),
-  ("dec", FunValue decImpl),
+  ("inc", FunValue "inc" incImpl),
+  ("dec", FunValue "inc" decImpl),
   ("add", binaryMathFunction "add" (+)),
   ("mul", binaryMathFunction "mul" (*)),
   ("div", binaryMathFunction "div" div),
