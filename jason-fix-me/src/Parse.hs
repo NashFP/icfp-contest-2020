@@ -2,6 +2,7 @@
 
 module Parse(parseFile, repl, Env) where
 
+import System.IO
 import Text.Parsec
 import Text.Parsec.Char
 import qualified Data.Map as Map
@@ -100,7 +101,8 @@ parseFile filename =
 
 repl :: Env -> IO ()
 repl env = do
-  putStrLn "*>"
+  putStr "\x1b[36m\x1b[1m*>\x1b[0m "
+  hFlush stdout
   line <- getLine
   case runParser (expression env) () "<stdin>" line of
     Left errors -> putStrLn $ "syntax error: " ++ show errors

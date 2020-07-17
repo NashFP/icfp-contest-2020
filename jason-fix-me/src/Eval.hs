@@ -5,6 +5,7 @@ data Value =
   | FunValue String (Value -> Value)
   | NilValue
   | ConsValue Value Value
+  | BitmapValue [String]
 
 showAsListTail :: Value -> String
 showAsListTail (ConsValue h t) = " " ++ show h ++ showAsListTail t
@@ -16,6 +17,7 @@ instance Show Value where
   show NilValue = "nil"
   show (ConsValue h t) = "[" ++ show h ++ showAsListTail t ++ "]"
   show (FunValue name f) = name
+  show (BitmapValue lines) = concat $ map (++ "\n") lines
 
 class ToValue t where
   toValue :: t -> Value
@@ -97,6 +99,25 @@ if0Impl (IntValue 0) = t
 if0Impl (IntValue _) = f
 if0Impl other = error $ "if0: TypeError: number expected, not " ++ show other
 
+plot = FunValue "plot" (\v -> BitmapValue $ render $ fmap valueToCoordinatePair $ valueToList v)
+
+valueToList NilValue = []
+valueToList (ConsValue h t) = h : valueToList t
+valueToList other = error $ "valueToList: TypeError: list expected, not " ++ show other
+
+valueToCoordinatePair (ConsValue (IntValue x) (IntValue y)) = (x, y)
+
+render :: [(Integer, Integer)] -> [String]
+render pairs =
+  let minX = minimum $ fmap fst pairs
+      maxX = maximum $ fmap fst pairs
+      minY = minimum $ fmap snd pairs
+      maxY = maximum $ fmap snd pairs
+  in [[if elem (x, y) pairs then '*' else '.'
+         | x <- [minX..maxX]]
+       | y <- [minY..maxY]]
+
+
 stdlib :: [(String, Value)]
 stdlib = [
   ("s", s),
@@ -117,4 +138,5 @@ stdlib = [
   ("add", binaryMathFunction "add" (+)),
   ("mul", binaryMathFunction "mul" (*)),
   ("div", binaryMathFunction "div" div),
-  ("isnil", isnil)]
+  ("isnil", isnil),
+  ("plot", plot)]
