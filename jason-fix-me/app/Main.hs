@@ -1,50 +1,53 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
---import Lib
+import System.Environment
+import Network.HTTP.Simple
+import Data.ByteString.Lazy.UTF8 as BLU
+import Data.Map as Map
+import Control.Exception
 
-import Data.Char
-
-data Value = Num Integer | Nil | Cons Value Value
-  deriving Show
-
-negateVal (Num x) = Num (-x)
-negateVal other = other
+--import Data.Char
+--import Encode
+--import Decode
+import Parse
 
 
--- Demodulate a string of 1s followed by a 0.
--- Returns the number of ones, and the remainder of the input list.
-decodeUnary (0 : s) = (0, s)
-decodeUnary (1 : s) =
-  let (n, s') = decodeUnary s in
-    (n + 1, s')
+prettyPrintEquation (name, value) = name ++ " = " ++ show value ++ "\n"
 
--- Demodulate the body of an integer.
--- The integer is big-endian.
-decodeIntBits acc 0 s = (acc, s)
-decodeIntBits acc n (0 : s) = decodeIntBits (2 * acc) (n - 1) s
-decodeIntBits acc n (1 : s) = decodeIntBits (2 * acc + 1) (n - 1) s
 
--- Demodulate an integer.
-decodeInt :: [Int] -> (Integer, [Int])
-decodeInt s =
-  let (len, s') = decodeUnary s in
-    decodeIntBits 0 (4 * len) s'
-
--- Decode one value.
--- Returns the value, and the remainder of the input list.
-decode :: [Int] -> (Value, [Int])
-decode (0 : 0 : tail) = (Nil, tail)
-decode (0 : 1 : tail) =
-  let (v, xs) = decodeInt tail in (Num v, xs)
-decode (1 : 0 : tail) =
-  let (v, xs) = decodeInt tail in (Num (-v), xs)
-decode (1 : 1 : tail) =
-  let (x, tail') = decode tail in
-    let (y, tail'') = decode tail' in
-      (Cons x y, tail'')
-
-main :: IO ()
 main = do
-  putStrLn ":) >"
-  line <- getLine
-  putStrLn $ show $ decode $ map digitToInt $ line
+  args <- getArgs
+  variables <- parseFile (args!!0)
+  putStrLn $ concat $ fmap prettyPrintEquation $ Map.toList $ variables
+
+
+-- stack run "https://icfpc2020-api.testkontur.ru/aliens/send?apiKey=$API_KEY" "1101000"
+-- main = catch (
+--     do  
+--         args <- getArgs
+--         putStrLn ("ServerUrl: " ++ args!!0 ++ "; PlayerKey: " ++ args!!1)
+--         request' <- parseRequest ("POST " ++ (args!!0))
+--         let request = setRequestBodyLBS (BLU.fromString (args!!1)) request'
+--         response <- httpLBS request
+--         let statuscode = show (getResponseStatusCode response)
+--         case statuscode of
+--             "200" -> putStrLn ("Server response: " ++ BLU.toString (getResponseBody response))
+--             _ -> putStrLn ("Unexpected server response:\nHTTP code: " ++ statuscode ++ "\nResponse body: " ++ BLU.toString (getResponseBody response))
+--     ) handler
+--     where
+--         handler :: SomeException -> IO ()
+--         handler ex = putStrLn $ "Unexpected server response:\n" ++ show ex
+
+
+
+--main :: IO ()
+--main = putStrLn $ map intToDigit $ encode (Cons (Num 0) Nil)
+
+
+-- main = do
+--   putStrLn ":) >"
+--   line <- getLine
+--   putStrLn $ show $ decode $ map digitToInt $ line
+-- 

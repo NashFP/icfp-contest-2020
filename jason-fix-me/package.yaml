@@ -21,7 +21,11 @@ description:         Please see the README on GitHub at <https://github.com/jore
 
 dependencies:
 - base >= 4.7 && < 5
-- HTTP >= 4000
+- http-client >= 0.6.4
+- http-conduit >= 2.2.3
+- utf8-string >= 1.0.1
+- parsec >= 3.1.14
+- containers >= 0.6.2
 
 library:
   source-dirs: src
