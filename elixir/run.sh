@@ -2,4 +2,4 @@
 
 _args="$@"
 
-app/release/bin/app eval "ExampleApp.hello(\"$_args\")" || echo "run error code: $?"
+app/release/bin/app eval "Icfp2020.run(\"$_args\")" || echo "run error code: $?"

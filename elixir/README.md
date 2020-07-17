@@ -1,4 +1,7 @@
-# StarterKit app for ICFP 2020
+# NashFP ICFP 2020 Elixir solution
+
+
+## Docs from the StarterKit
 
 This is a Mix project setup to build a Release named `app` using the official
 Dockerfile.

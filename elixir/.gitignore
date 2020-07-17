@@ -1,3 +1,4 @@
 app/release/
 app/_build/
+app/deps/
 Dockerfile

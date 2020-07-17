@@ -1,11 +1,22 @@
-defmodule ExampleApp do
-  def hello(args) do
+defmodule Icfp2020 do
+  def run(args) do
     Application.ensure_all_started(:inets)
     Application.ensure_all_started(:ssl)
 
-    try do
-      [server_url, player_key] = args |> String.split(" ")
+    args
+    |> String.split(" ")
+    |> case do
+      [server_url, player_key] ->
+        try_run(server_url, player_key)
 
+      _ ->
+        IO.puts("Expected two args: server_url player_key")
+        System.halt(2)
+    end
+  end
+
+  def try_run(server_url, player_key) do
+    try do
       IO.puts("ServerUrl: #{server_url}; PlayerKey: #{player_key}")
 
       {:ok, {{_, status_code, _}, _headers, body}} =
