@@ -1,11 +1,13 @@
 module Eval(Value(..), eval, evaluateProgram, stdlib, repl) where
 
+import Debug.Trace
 import Parse
 import qualified Data.Map as Map
 import System.IO
 import System.IO.Unsafe (unsafePerformIO)
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import Data.Char (digitToInt, intToDigit)
+import Data.List (intercalate)
 import DataTypes
 import Encode
 import Decode
@@ -137,7 +139,33 @@ if0Impl (IntValue 0) = t
 if0Impl (IntValue _) = f
 if0Impl other = error $ "if0: TypeError: number expected, not " ++ show other
 
-plot = FunValue "plot" (\v -> BitmapValue $ render $ fmap valueToCoordinatePair $ valueToList v)
+draw = FunValue "draw" (\v -> BitmapValue $ render $ fmap valueToCoordinatePair $ valueToList v)
+
+writeBitmaps :: [Value] -> [Value]
+writeBitmaps bitmaps =
+  unsafePerformIO $ do
+    appendFile "pics.txt" (intercalate "\n" (map show bitmaps))
+    return bitmaps
+
+
+renderBitmap NilValue = NilValue
+renderBitmap v =
+  trace ("Rendering bitmap "++show v) (
+    let cp = fmap valueToCoordinatePair $ valueToList v in
+    trace ("Coordinate pairs "++show cp) (
+      BitmapValue $ render cp
+    )
+  )
+multipleDraw :: Value -> Value
+multipleDraw v =
+  trace ("Multipledraw "++show v) (
+  let bitmaps = map renderBitmap $ valueToList v in
+    listToValue $ writeBitmaps bitmaps
+  )
+
+listToValue :: [Value] -> Value
+listToValue [] = NilValue
+listToValue (x:xs) = ConsValue x $ listToValue xs
 
 valueToList NilValue = []
 valueToList (ConsValue h t) = h : valueToList t
@@ -147,6 +175,7 @@ valueToCoordinatePair (ConsValue (IntValue x) (IntValue y)) = (x, y)
 
 render :: [(Integer, Integer)] -> [String]
 render pairs =
+  trace ("render pair "++show pairs) (
   let minX = minimum $ fmap fst pairs
       maxX = maximum $ fmap fst pairs
       minY = minimum $ fmap snd pairs
@@ -154,6 +183,7 @@ render pairs =
   in [[if elem (x, y) pairs then '*' else '.'
          | x <- [minX..maxX]]
        | y <- [minY..maxY]]
+       )
 
 
 stdlib :: [(String, Value)]
@@ -177,7 +207,8 @@ stdlib = [
   ("mul", binaryMathFunction "mul" (*)),
   ("div", binaryMathFunction "div" div),
   ("isnil", isnil),
-  ("plot", plot),
+  ("draw", draw),
+  ("multipledraw", FunValue "multipledraw" multipleDraw),
   ("mod", FunValue "mod" modulate),
   ("dem", FunValue "dem" demodulate),
   ("modem", FunValue "modem" modem),

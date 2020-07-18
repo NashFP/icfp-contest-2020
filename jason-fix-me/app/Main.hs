@@ -17,6 +17,7 @@ main = do
   args <- getArgs
   program <- parseFile (args!!0)
   putStrLn $ concat $ fmap Lambda.prettyPrintEquation $ program
+  writeFile "pics.txt" ""
   let env = evaluateProgram program
   repl env
 
