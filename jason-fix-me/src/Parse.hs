@@ -102,12 +102,17 @@ parseFile filename =
      return $ evaluateFile filename input
 
 
+replEntry env = do
+  v <- expression env
+  eof
+  return v
+
 repl :: Env -> IO ()
 repl env = do
   putStr "\x1b[36m\x1b[1m*>\x1b[0m "
   hFlush stdout
   line <- getLine
-  case runParser (expression env) () "<stdin>" line of
+  case runParser (replEntry env) () "<stdin>" line of
     Left errors -> putStrLn $ "syntax error: " ++ show errors
     Right value -> putStrLn $ show value
   repl env
