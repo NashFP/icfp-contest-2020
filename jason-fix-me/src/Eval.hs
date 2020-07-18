@@ -3,32 +3,9 @@ module Eval(Value(..), eval, evaluateProgram, stdlib, repl) where
 import Parse
 import qualified Data.Map as Map
 import System.IO
-
-data Value =
-    IntValue Integer
-  | FunValue String (Value -> Value)
-  | NilValue
-  | ConsValue Value Value
-  | BitmapValue [String]
-
-showAsListTail :: Value -> String
-showAsListTail (ConsValue h t) = " " ++ show h ++ showAsListTail t
-showAsListTail NilValue = ""
-showAsListTail other = " . " ++ show other
-
-instance Show Value where
-  show (IntValue i) = show i
-  show NilValue = "nil"
-  show (ConsValue h t) = "[" ++ show h ++ showAsListTail t ++ "]"
-  show (FunValue name f) = name
-  show (BitmapValue lines) = concat $ map (++ "\n") lines
-
-instance Eq Value where
-  (==) (IntValue x) (IntValue y) = x == y
-  (==) NilValue NilValue = True
-  (==) (ConsValue h1 t1) (ConsValue h2 t2) = (h1, t1) == (h2, t2)
-  (==) (FunValue name1 f1) (FunValue name2 f2) = name1 == name2
-  (==) (BitmapValue lines1) (BitmapValue lines2) = lines1 == lines2
+import DataTypes
+import Encode
+import Decode
 
 class ToValue t where
   toValue :: t -> Value
@@ -72,6 +49,15 @@ decImpl other = error $ "dec: TypeError: number expected, not " ++ show other
 negImpl :: Value -> Value
 negImpl (IntValue i) = IntValue (-i)
 negImpl other = error $ "neg: TypeError: undefined is not a function: " ++ show other
+
+modulate :: Value -> Value
+modulate (IntValue i) = encode (IntValue i)
+modulate (ConsValue c1 c2) = encode (ConsValue c1 c2)
+modulate other = error $ "attempted to modulate " ++ show other
+
+demodulate :: Value -> Value
+demodulate (BitStringValue bits) = fst $ decode (BitStringValue bits)
+demodulate other = error $ "attempted to demodulate "++show other
 
 binaryMathFunction :: ToValue t => String -> (Integer -> Integer -> t) -> Value
 binaryMathFunction name f = FunValue name impl
@@ -162,6 +148,8 @@ stdlib = [
   ("div", binaryMathFunction "div" div),
   ("isnil", isnil),
   ("plot", plot),
+  ("mod", FunValue "mod" modulate),
+  ("dem", FunValue "dem" demodulate),
   ("if0", if0)]
 
 
