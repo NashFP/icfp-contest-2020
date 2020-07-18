@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 32afda68cc5428db371daeff23a7f9827e7db8ab55c304b619e3c9b3b86ecd02
+-- hash: ec3b993c8d784b45abce4c256119a756b8ba250ede21898d071cef02d5cb1105
 
 name:           wcgw
 version:        0.1.0.0
@@ -30,6 +30,7 @@ library
       Decode
       Encode
       Eval
+      Lambda
       Lib
       Parse
   other-modules:
