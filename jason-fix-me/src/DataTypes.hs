@@ -30,4 +30,5 @@ instance Eq Value where
   (==) (FunValue name1 f1) (FunValue name2 f2) = name1 == name2
   (==) (BitmapValue lines1) (BitmapValue lines2) = lines1 == lines2
   (==) (BitStringValue bits1) (BitStringValue bits2) = bits1 == bits2
+  (==) _ _ = False
 

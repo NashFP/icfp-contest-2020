@@ -29,6 +29,10 @@ main = runTestTT $ TestList
     , assertEvalEqual "ap nil 1" $ FunValue "t" id
     , assertEvalEqual "ap isnil nil" $ FunValue "t" id
     , assertEvalEqual "ap isnil ap ap cons 0 1" $ FunValue "f" id
+    , assertEvalEqual "ap mod 0" $ BitStringValue [0, 1, 0]
+    , assertEvalEqual "ap mod 1" $ BitStringValue [0, 1, 1, 0, 0, 0, 0, 1]
+    , assertEvalEqual "ap mod -256" $ BitStringValue [1,0,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0]
+    , assertEvalEqual "ap dem %010" $ IntValue 0
     ]
 
 assertEvalEqual :: String -> Value -> Test
