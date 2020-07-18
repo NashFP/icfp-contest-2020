@@ -188,9 +188,18 @@ stdlib = [
 -- Evaluate an expression (lazily).
 eval :: Env -> Expression -> Value
 eval env (Constant i) = IntValue i
+eval env (ListLiteral expressions) = consFromList env expressions
 eval env (Identifier name) = getValueOfVariable env name
 eval env (Apply f arg) = ap (eval env f) (eval env arg)
 eval env (BitString bits) = BitStringValue bits
+
+consFromList :: Env -> [Expression] -> Value
+consFromList env expressions =
+  let 
+    values = map (eval env) expressions
+    f current acc = ConsValue current acc
+  in
+    foldr f NilValue values
 
 -- Evaluate a program, returning the populated environment.
 evaluateProgram :: [(String, Expression)] -> Env
