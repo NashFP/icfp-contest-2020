@@ -23,6 +23,13 @@ instance Show Value where
   show (FunValue name f) = name
   show (BitmapValue lines) = concat $ map (++ "\n") lines
 
+instance Eq Value where
+  (==) (IntValue x) (IntValue y) = x == y
+  (==) NilValue NilValue = True
+  (==) (ConsValue h1 t1) (ConsValue h2 t2) = (h1, t1) == (h2, t2)
+  (==) (FunValue name1 f1) (FunValue name2 f2) = name1 == name2
+  (==) (BitmapValue lines1) (BitmapValue lines2) = lines1 == lines2
+
 class ToValue t where
   toValue :: t -> Value
 
