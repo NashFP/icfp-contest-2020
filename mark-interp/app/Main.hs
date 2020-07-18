@@ -266,7 +266,7 @@ parseLineWithFail l =
 
 main :: IO ()
 main = do
-    f <- readFile "../galaxy.txt"
+    f <- readFile "../data/galaxy.txt"
     let l = lines f
     let dict = Map.fromList (map parseLineWithFail l)
     repl dict
