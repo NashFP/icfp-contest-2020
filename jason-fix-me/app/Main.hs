@@ -21,6 +21,7 @@ prettyPrintEquation (name, value) = name ++ " = " ++ show value ++ "\n"
 main = do
   args <- getArgs
   program <- parseFile (args!!0)
+  writeFile "pics.txt" ""
   let env = evaluateProgram program
   putStrLn $ concat $ fmap prettyPrintEquation $ Map.toList $ env
   repl env
