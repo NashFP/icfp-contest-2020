@@ -1,10 +1,9 @@
-module Decode (Value(..), decode) where
+module Decode  (decode) where
 
-data Value = Num Integer | Nil | Cons Value Value
-  deriving Show
+import DataTypes
 
 -- Flip the sign of an integer. Leaves other values unchanged.
-negateVal (Num x) = Num (-x)
+negateVal (IntValue x) = IntValue (-x)
 negateVal other = other
 
 
@@ -29,13 +28,13 @@ decodeInt s =
 
 -- Decode one value.
 -- Returns the value, and the remainder of the input list.
-decode :: [Int] -> (Value, [Int])
-decode (0 : 0 : tail) = (Nil, tail)
-decode (0 : 1 : tail) =
-  let (v, xs) = decodeInt tail in (Num v, xs)
-decode (1 : 0 : tail) =
-  let (v, xs) = decodeInt tail in (Num (-v), xs)
-decode (1 : 1 : tail) =
-  let (x, tail') = decode tail in
-    let (y, tail'') = decode tail' in
-      (Cons x y, tail'')
+decode :: Value -> (Value, [Int])
+decode (BitStringValue (0 : 0 : tail)) = (NilValue, tail)
+decode (BitStringValue (0 : 1 : tail)) =
+  let (v, xs) = decodeInt tail in (IntValue v, xs)
+decode (BitStringValue (1 : 0 : tail)) =
+  let (v, xs) = decodeInt tail in (IntValue (-v), xs)
+decode (BitStringValue (1 : 1 : tail)) =
+  let (x, tail') = decode (BitStringValue tail) in
+    let (y, tail'') = decode (BitStringValue tail') in
+      (ConsValue x y, tail'')
