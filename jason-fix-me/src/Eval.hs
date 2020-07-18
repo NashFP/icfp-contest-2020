@@ -1,4 +1,8 @@
-module Eval(Value(..), ap, stdlib) where
+module Eval(Value(..), eval, evaluateProgram, stdlib, repl) where
+
+import Parse
+import qualified Data.Map as Map
+import System.IO
 
 data Value =
     IntValue Integer
@@ -32,9 +36,23 @@ instance ToValue Bool where
   toValue True = t
   toValue False = f
 
+-- The type of environments. An environment is basically a collection of
+-- name-value pairs.
+type Env = Map.Map String Value
+
+-- Look up the value of a variable in an environment.
+getValueOfVariable :: Env -> String -> Value
+getValueOfVariable env key =
+  case Map.lookup key env of
+    Nothing -> error ("no such variable: " ++ key)
+    Just value -> value
+
 ap (FunValue _ f) v = f v
 ap (ConsValue a b) f = ap (ap f a) b
 ap NilValue x = t
+ap other arg = error $ "ap: TypeError: function expected, not " ++ show other
+
+-- The alien standard library
 
 incImpl :: Value -> Value
 incImpl (IntValue i) = IntValue (i + 1)
@@ -75,9 +93,6 @@ t = FunValue "t" (\x -> FunValue ("(t " ++ show x ++ ")") (\y -> x))
 -- f x y = y
 f = FunValue "f" (\x -> i)
 
--- ap ap ap c x0 x1 x2   =   ap ap x0 x2 x1
--- (((c x0) x1) x2)   =   ((x0 x2) x1)
--- c x0 x1 x2   =   x0 x2 x1
 -- c f x y = f y x
 c = FunValue "c" (\f -> FunValue "(c _)" (\x -> FunValue "(c _ _)" (\y -> ap (ap f y) x)))
 
@@ -139,4 +154,30 @@ stdlib = [
   ("mul", binaryMathFunction "mul" (*)),
   ("div", binaryMathFunction "div" div),
   ("isnil", isnil),
-  ("plot", plot)]
+  ("plot", plot),
+  ("if0", if0)]
+
+
+-- Evaluate an expression (lazily).
+eval :: Env -> Expression -> Value
+eval env (Constant i) = IntValue i
+eval env (Identifier name) = getValueOfVariable env name
+eval env (Apply f arg) = ap (eval env f) (eval env arg)
+
+-- Evaluate a program, returning the populated environment.
+evaluateProgram :: [(String, Expression)] -> Env
+evaluateProgram parsedEquations =
+  let env :: Env
+      env = Map.fromList (stdlib ++ [(name, eval env expr) | (name, expr) <- parsedEquations])
+  in env
+
+-- Run a read-eval-print loop.
+repl :: Env -> IO ()
+repl env = do
+  putStr "\x1b[36m\x1b[1m*>\x1b[0m "
+  hFlush stdout
+  line <- getLine
+  case parse replEntry "<stdin>" line of
+    Left errors -> putStrLn $ "syntax error: " ++ show errors
+    Right value -> putStrLn $ show $ eval env value
+  repl env
