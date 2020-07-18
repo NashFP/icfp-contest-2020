@@ -39,15 +39,21 @@ bitstring = do
 listLiteral :: Parser Expression
 listLiteral = do
   string "( "
-  expressions <- expressionSpace `sepBy` (string ", ")
+  many $ string " "
+  expressions <- expressionSpace `sepBy` commaSpace
   string ")"
   return $ ListLiteral expressions
 
 expressionSpace :: Parser Expression
 expressionSpace = do
   expr <- expression
-  string " "
+  many1 $ string " "
   return expr
+
+commaSpace :: Parser [String]
+commaSpace = do
+  comma <- string ", "
+  many $ string " "
 
 -- Parse either kind of identifier.
 identifier :: Parser String

@@ -34,8 +34,11 @@ main = runTestTT $ TestList
     , assertEvalEqual "ap mod -256" $ BitStringValue [1,0,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0]
     , assertEvalEqual "ap dem %010" $ IntValue 0
     , assertEvalEqual "( )" $ NilValue
+    , assertEvalEqual "(  )" $ NilValue
     , assertEvalEqual "( 1 )" $ ConsValue (IntValue 1) NilValue
+    , assertEvalEqual "( 1  )" $ ConsValue (IntValue 1) NilValue
     , assertEvalEqual "( 1 , 2 )" $ ConsValue (IntValue 1) (ConsValue (IntValue 2) NilValue)
+    , assertEvalEqual "( 1 ,  2 )" $ ConsValue (IntValue 1) (ConsValue (IntValue 2) NilValue)
     , assertEvalEqual "( ( ) )" $ ConsValue NilValue NilValue
     , assertEvalEqual "( nil )" $ ConsValue NilValue NilValue
     , assertEvalEqual "( ap inc 0 )" $ ConsValue (IntValue 1) NilValue
