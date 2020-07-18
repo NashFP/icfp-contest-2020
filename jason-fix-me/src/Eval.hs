@@ -158,6 +158,7 @@ eval :: Env -> Expression -> Value
 eval env (Constant i) = IntValue i
 eval env (Identifier name) = getValueOfVariable env name
 eval env (Apply f arg) = ap (eval env f) (eval env arg)
+eval env (BitString bits) = BitStringValue bits
 
 -- Evaluate a program, returning the populated environment.
 evaluateProgram :: [(String, Expression)] -> Env

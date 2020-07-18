@@ -5,11 +5,13 @@ module Parse(Expression(..), parseFile, parse, replEntry) where
 import System.IO
 import Text.Parsec
 import Text.Parsec.Char
+import Data.Char (digitToInt)
 
 data Expression =
   Constant Integer
   | Identifier String
   | Apply Expression Expression
+  | BitString [Int]
 
 type Parser t = forall s u m . Stream s m Char => ParsecT s u m t
 
@@ -27,6 +29,13 @@ numericIdentifier = do
   digits <- many1 digit
   return $ ":" ++ digits
 
+bitstring :: Parser Expression
+bitstring = do
+  string "%"
+  digits <- many1 digit
+  return $ BitString $ map digitToInt digits
+  
+  
 -- Parse either kind of identifier.
 identifier :: Parser String
 identifier = alphaIdentifier <|> numericIdentifier
@@ -62,6 +71,7 @@ expression =
       variableOrFunctionApplication
   <|> nonnegativeIntegerLiteral
   <|> negativeIntegerLiteral
+  <|> bitstring
 
 -- Parse an equation (one line of "galaxy.txt").
 equation :: Parser (String, Expression)
