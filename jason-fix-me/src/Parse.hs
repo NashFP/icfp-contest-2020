@@ -9,6 +9,7 @@ import Data.Char (digitToInt)
 
 data Expression =
   Constant Integer
+  | ListLiteral [Expression]
   | Identifier String
   | Apply Expression Expression
   | BitString [Int]
@@ -35,7 +36,19 @@ bitstring = do
   digits <- many1 digit
   return $ BitString $ map digitToInt digits
   
-  
+listLiteral :: Parser Expression
+listLiteral = do
+  string "( "
+  expressions <- expressionSpace `sepBy` (string ", ")
+  string ")"
+  return $ ListLiteral expressions
+
+expressionSpace :: Parser Expression
+expressionSpace = do
+  expr <- expression
+  string " "
+  return expr
+
 -- Parse either kind of identifier.
 identifier :: Parser String
 identifier = alphaIdentifier <|> numericIdentifier
@@ -72,6 +85,7 @@ expression =
   <|> nonnegativeIntegerLiteral
   <|> negativeIntegerLiteral
   <|> bitstring
+  <|> listLiteral
 
 -- Parse an equation (one line of "galaxy.txt").
 equation :: Parser (String, Expression)
