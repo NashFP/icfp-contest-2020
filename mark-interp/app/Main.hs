@@ -41,8 +41,8 @@ stdFuncs = Map.fromList [
   ("s", (S,3)),
   ("c", (C,3)),
   ("b", (B,3)),
-  ("t", (T,3)),
-  ("f", (F,3)),
+  ("t", (T,2)),
+  ("f", (F,2)),
   ("car", (CAR,2)),
   ("cdr", (CDR,2)),
   ("cons", (CONS,2)),
@@ -97,37 +97,104 @@ parseToken (t : ts) =
       Just (f, a) -> Right $ (Func f a, ts)
       Nothing -> Left ("Unknown standard function "++t)
 
-runFunc :: AlienFunction -> [AlienCode] -> Either String AlienCode
-runFunc ADD (Number n1:Number n2:[]) = Right $ Number (n1+n2)
-runFunc MUL (Number n1:Number n2:[]) = Right $ Number (n1*n2)
-runFunc DIV (Number n1:Number n2:[]) = Right $ Number (n1 `rem` n2)
-runFunc DEC (Number n1:[]) = Right $ Number (n1-1)
-runFunc INC (Number n1:[]) = Right $ Number (n1+1)
-runFunc NEG (Number n1:[]) = Right $ Number (-n1)
-runFunc POWER2 (Number n1:[]) = Right $ Number (2 ^ n1)
-runFunc EQUALS (Number n1:Number n2:[]) = if n1 == n2 then Right $ (Func T 3) else Right $ (Func F 3)
-runFunc LESSTHAN (Number n1:Number n2:[]) = if n1 < n2 then Right $ (Func T 3) else Right $ (Func F 3)
-runFunc MOD (x:[]) = Right $ modulate x
-runFunc DEM (BitString bits:[]) = Right $ demodulate bits
-runFunc S (x0:x1:x2:[]) = Right $ Apply (Apply x0 x2) (Apply x1 x2)
-runFunc C (x0:x1:x2:[]) = Right $ Apply (Apply x0 x1) x1
-runFunc B (x0:x1:x2:[]) = Right $ Apply x0 (Apply x1 x2)
-runFunc T (Func T _:x1:x2:[]) = Right $ x1
-runFunc F (Func F _:x1:x2:[]) = Right $ x2
-runFunc I (x:[]) = Right $ x
-runFunc CAR (Cons c1 c2:[]) = Right $ c1
-runFunc CDR (Cons c1 c2:[]) = Right $ c2
-runFunc ISNIL (Nil:[]) = Right $ Func T 3
-runFunc ISNIL _ = Right $ Func F 3
-runFunc IFZERO (Number n1:x:y:[]) = if n1 == 0 then Right $ x else Right $ y
-runFunc CONS (x0:x1:[]) = Right $ Cons x0 x1
+executeBinaryMath :: AlienCode -> AlienCode -> Map.Map String AlienCode -> (Integer -> Integer -> Integer) -> String -> Either String AlienCode
+executeBinaryMath n1 n2 codeDict mathFunc funcName =
+  case evaluate n1 codeDict of
+    Right (Number n1) -> case evaluate n2 codeDict of
+      Right (Number n2) -> Right $ Number (mathFunc n1 n2)
+      Right x -> Left ("Right side of "++funcName++" is still " ++ (show x))
+      x -> x
+    Right x -> Left ("Left side of "++funcName++" is still " ++ (show x))
+    x -> x
 
-runFunc SEND _ = Left "SEND not implemented"
-runFunc DRAW _ = Left "DRAW not implemented"
-runFunc CHECKERBOARD _ = Left "CHECKERBOARD not implemented"
-runFunc MULTIPLEDRAW _ = Left "MULTIPLEDRAW not implemented"
+executeUnaryMath :: AlienCode -> Map.Map String AlienCode -> (Integer -> Integer) -> String -> Either String AlienCode
+executeUnaryMath n1 codeDict mathFunc funcName =
+  case evaluate n1 codeDict of
+    Right (Number n1) -> Right $ Number (mathFunc n1)
+    Right x -> Left ("Param of "++funcName++" is still " ++ (show x))
+    x -> x
 
-runFunc f arglist = Left ("Can't execute function "++(show f)++" with args"++(unwords $ map show arglist))
+executeConditional :: AlienCode -> AlienCode -> Map.Map String AlienCode -> (Integer -> Integer -> Bool) -> String -> Either String AlienCode
+executeConditional n1 n2 codeDict comparator funcName =
+  case evaluate n1 codeDict of
+    Right (Number n1) -> case evaluate n2 codeDict of
+      Right (Number n2) -> if comparator n1 n2 then Right $ Func T 2 else Right $ Func F 2
+      Right x -> Left ("Right side of "++funcName++" is still " ++ (show x))
+      x -> x
+    Right x -> Left ("Left side of "++funcName++" is still " ++ (show x))
+    x -> x
+
+runFunc :: AlienFunction -> [AlienCode] -> Map.Map String AlienCode -> Either String AlienCode
+runFunc ADD (n1:n2:[]) codeDict =
+  executeBinaryMath n1 n2 codeDict (+) "add"
+runFunc MUL (n1:n2:[]) codeDict =
+  executeBinaryMath n1 n2 codeDict (*) "mul"
+runFunc DIV (n1:n2:[]) codeDict =
+  executeBinaryMath n1 n2 codeDict rem "rem"
+
+runFunc INC (n1:[]) codeDict =
+  executeUnaryMath n1 codeDict (1 +) "inc"
+runFunc DEC (n1:[]) codeDict =
+  executeUnaryMath n1 codeDict (\n -> n - 1) "dec"
+runFunc NEG (n1:[]) codeDict =
+  executeUnaryMath n1 codeDict (\n -> -n) "neg"
+runFunc POWER2 (n1:[]) codeDict =
+  executeUnaryMath n1 codeDict (2 ^) "pwr2"
+
+
+runFunc EQUALS (n1:n2:[]) codeDict = executeConditional n1 n2 codeDict (==) "eq"
+runFunc LESSTHAN (n1:n2:[]) codeDict = executeConditional n1 n2 codeDict (<) "lt"
+
+runFunc MOD (x:[]) codeDict =
+  case evaluate x codeDict of
+    Right (Number n) -> Right $ modulate (Number n)
+    Right (Cons c1 c2) -> Right $ modulate (Cons c1 c2)
+    Right x -> Left ("Can't modulate " ++ (show x))
+    x -> x
+
+runFunc DEM (bits:[]) codeDict =
+  case evaluate bits codeDict of
+    Right (BitString bits) -> Right $ demodulate bits
+    Right x -> Left ("Can't demodulate "++(show x))
+    x -> x
+
+runFunc S (x0:x1:x2:[]) codeDict = doApply (Apply x0 x2) (Apply x1 x2) codeDict
+runFunc C (x0:x1:x2:[]) codeDict = doApply (Apply x0 x1) x1 codeDict
+runFunc B (x0:x1:x2:[]) codeDict = doApply x0 (Apply x1 x2) codeDict
+
+runFunc T (x1:x2:[]) codeDict = Right $ x1
+runFunc F (x1:x2:[]) codeDict = Right $ x2
+runFunc I (x:[]) codeDict = Right $ x
+runFunc CAR (c:[]) codeDict =
+  case evaluate c codeDict of
+    Right (Cons c1 c2) -> Right c1
+    Right x -> Left ("Cannot take car of "++(show x))
+    x -> x
+runFunc CDR (c:[]) codeDict =
+  case evaluate c codeDict of
+    Right (Cons c1 c2) -> Right c2
+    Right x -> Left ("Cannot take cdr of "++(show x))
+    x -> x
+runFunc ISNIL (x:[]) codeDict =
+  case evaluate x codeDict of
+    Right Nil -> Right $ Func T 2
+    Right x -> Right $ Func F 2
+    x -> x
+runFunc IFZERO (n1:x:y:[]) codeDict =
+  case evaluate n1 codeDict of
+    Right (Number n1) ->
+      if n1 == 0 then Right x else Right y
+    Right x -> Left ("Cannot do if0 on "++(show x))
+    x -> x
+
+runFunc CONS (x0:x1:[]) codeDict = Right $ Cons x0 x1
+
+runFunc SEND _ _ = Left "SEND not implemented"
+runFunc DRAW _ _ = Left "DRAW not implemented"
+runFunc CHECKERBOARD _ _ = Left "CHECKERBOARD not implemented"
+runFunc MULTIPLEDRAW _ _ = Left "MULTIPLEDRAW not implemented"
+
+runFunc f arglist _ = Left ("Can't execute function "++(show f)++" with args"++(unwords $ map show arglist))
 
 -- Determine how many 4-bit units we need to encode the given integer.
 numberSize :: Integer -> Integer
@@ -186,53 +253,30 @@ decodeInt s =
 
 
 doApply :: AlienCode -> AlienCode -> Map.Map String AlienCode -> Either String AlienCode
-doApply (Func f a) (CodeRef r) codeDict =
-  case evaluate (CodeRef r) codeDict of
-    Right acEval ->
-      trace ("Expanded CodeRef to "++(show acEval)) (
+doApply x ac codeDict =
+  case evaluate x codeDict of
+    Right (Func f a) ->
       if a == 1 then
-        runFunc f [acEval]
+        runFunc f [ac] codeDict
       else
-        Right $ PartialFunc f a [acEval]
-        )
-    x -> x
-doApply (PartialFunc f a c) (CodeRef r) codeDict=
-  case evaluate (CodeRef r) codeDict of
-    Right acEval ->
-      trace ("Expanded CodeRef to "++(show acEval)) (
+        Right $ PartialFunc f a [ac]
+    Right (PartialFunc f a c) ->
       if a == 1 + length c then
-        runFunc f (reverse (acEval : c))
+        runFunc f (reverse (ac : c)) codeDict
       else
-        Right $ PartialFunc f a (acEval:c)
-        )
-doApply (Func f a) ac codeDict =
-  if a == 1 then
-    runFunc f [ac]
-  else
-    Right $ PartialFunc f a [ac]
-doApply (PartialFunc f a c) ac codeDict=
-  if a == 1 + length c then
-    runFunc f (reverse (ac : c))
-  else
-    Right $ PartialFunc f a (ac:c)
-
-doApply ac1 ac2 _ =
-  Left ("Invalid arguments to apply " ++ (show ac1) ++ " -> " ++ (show ac2))
+        Right $ PartialFunc f a (ac:c)
+    Right x -> Left ("Unable to apply "++(show x))
+    x -> x
 
 evaluate :: AlienCode -> Map.Map String AlienCode -> Either String AlienCode
 evaluate (Apply a1 a2) codeDict =
   trace ("Apply "++(show a1)++" -> "++(show a2)) (
-  case evaluate a1 codeDict of
-    Right app1 ->
-      case evaluate a2 codeDict of
-        Right app2 -> doApply app1 app2 codeDict
-        x -> x
-    x -> x
+  doApply a1 a2 codeDict
     )
 evaluate (CodeRef r) codeDict =
   trace ("CodeRef "++r) (
   case codeDict Map.!? r of
-    Just v -> Right v
+    Just v -> evaluate v codeDict
     Nothing -> Left ("Unknown code reference " ++ r)
   )
 evaluate (Run r) codeDict =
