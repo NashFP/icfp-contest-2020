@@ -1,118 +1,99 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, RankNTypes #-}
 
-module Parse(parseFile, repl, Env) where
+module Parse(Expression(..), parseFile, parse, replEntry) where
 
 import System.IO
 import Text.Parsec
 import Text.Parsec.Char
-import qualified Data.Map as Map
-import Eval
 
--- The type of environments. An environment is basically a collection of
--- name-value pairs.
-type Env = Map.Map String Value
+data Expression =
+  Constant Integer
+  | Identifier String
+  | Apply Expression Expression
+
+type Parser t = forall s u m . Stream s m Char => ParsecT s u m t
 
 -- Parse an identifier that starts with a letter, and consists of letters and digits.
-alphaIdentifier :: Stream s m Char => ParsecT s u m String
+alphaIdentifier :: Parser String
 alphaIdentifier = do
   start <- letter
   part <- many (letter <|> digit)
   return $ start : part
 
 -- Parse a special identifier like `:1234`.
-numericIdentifier :: Stream s m Char => ParsecT s u m String
+numericIdentifier :: Parser String
 numericIdentifier = do
   string ":"
   digits <- many1 digit
   return $ ":" ++ digits
 
 -- Parse either kind of identifier.
-identifier :: Stream s m Char => ParsecT s u m String
+identifier :: Parser String
 identifier = alphaIdentifier <|> numericIdentifier
 
--- Look up the value of a variable in an environment.
-getValueOfVariable :: Env -> String -> Value
-getValueOfVariable variables key =
-  case Map.lookup key variables of
-    Nothing -> error ("no such variable: " ++ key)
-    Just value -> value
-
 -- Parse a variable or a function application (`ap x y`).
-variableOrFunctionApplication :: Stream s m Char => Env -> ParsecT s u m Value
-variableOrFunctionApplication env = do
+variableOrFunctionApplication :: Parser Expression
+variableOrFunctionApplication = do
   name <- identifier
   if name == "ap"
     then do string " "
-            f <- expression env
+            f <- expression
             string " "
-            arg <- expression env
-            return $ ap f arg
-    else return $ getValueOfVariable env name
+            arg <- expression
+            return $ Apply f arg
+    else return $ Identifier name
 
 -- Parse an integer literal that doesn't start with `-`.
-nonnegativeIntegerLiteral :: Stream s m Char => ParsecT s u m Value
+nonnegativeIntegerLiteral :: Parser Expression
 nonnegativeIntegerLiteral = do
   digits <- many1 digit
-  return $ IntValue $ read digits
+  return $ Constant $ read digits
 
 -- Parse an integer literal that starts with `-`.
-negativeIntegerLiteral :: Stream s m Char => ParsecT s u m Value
+negativeIntegerLiteral :: Parser Expression
 negativeIntegerLiteral = do
   string "-"
   digits <- many1 digit
-  return $ IntValue $ - read digits
+  return $ Constant $ - read digits
 
 -- Parse an expression (the stuff that appears on the right side of `=`).
-expression :: Stream s m Char => Env -> ParsecT s u m Value
-expression env =
-      variableOrFunctionApplication env
+expression :: Parser Expression
+expression =
+      variableOrFunctionApplication
   <|> nonnegativeIntegerLiteral
   <|> negativeIntegerLiteral
 
 -- Parse an equation (one line of "galaxy.txt").
-equation :: Stream s m Char => Env -> ParsecT s u m (String, Value)
-equation env = do
+equation :: Parser (String, Expression)
+equation = do
   id <- identifier
   string " = "
-  expr <- expression env
+  expr <- expression
   return (id, expr)
 
 -- Parse a program (all of "galaxy.txt").
-program :: Stream s m Char => Env -> ParsecT s u m [(String, Value)]
-program env = equation env `sepEndBy` (string "\n")
-
--- Parse a program, returning the environment.
-evaluateFile :: String -> String -> Env
-evaluateFile filename sourceStr =
-  let variables :: Env
-      variables = Map.fromList (stdlib ++ parsedEquations)
-
-      parsedEquations :: [(String, Value)]
-      parsedEquations =
-        case runParser (program variables) () filename sourceStr of
-          Left errors -> error $ "parsing failed: " ++ show errors
-          Right equations -> equations
-
-  in variables
-
--- Read and parse a file, given the filename. Returns the environment.
-parseFile :: String -> IO Env
-parseFile filename =
-  do input <- readFile filename
-     return $ evaluateFile filename input
-
-
-replEntry env = do
-  v <- expression env
+program :: Parser [(String, Expression)]
+program = do
+  v <- equation `sepEndBy` string "\n"
   eof
   return v
 
-repl :: Env -> IO ()
-repl env = do
-  putStr "\x1b[36m\x1b[1m*>\x1b[0m "
-  hFlush stdout
-  line <- getLine
-  case runParser (replEntry env) () "<stdin>" line of
-    Left errors -> putStrLn $ "syntax error: " ++ show errors
-    Right value -> putStrLn $ show value
-  repl env
+-- Parse a program, but in the IO monad.
+parseProgram :: String -> String -> IO [(String, Expression)]
+parseProgram filename sourceStr =
+  case parse program filename sourceStr of
+    Left errors -> fail $ show errors
+    Right equations -> return equations
+
+-- Read and parse a file, given the filename. Returns the environment.
+parseFile :: String -> IO [(String, Expression)]
+parseFile filename =
+  do input <- readFile filename
+     parseProgram filename input
+
+-- Read a single expression (for the repl).
+replEntry :: Parser Expression
+replEntry = do
+  v <- expression
+  eof
+  return v

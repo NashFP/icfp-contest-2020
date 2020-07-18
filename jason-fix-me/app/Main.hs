@@ -12,6 +12,7 @@ import Control.Exception
 --import Encode
 --import Decode
 import Parse
+import Eval
 
 
 prettyPrintEquation (name, value) = name ++ " = " ++ show value ++ "\n"
@@ -19,7 +20,8 @@ prettyPrintEquation (name, value) = name ++ " = " ++ show value ++ "\n"
 
 main = do
   args <- getArgs
-  env <- parseFile (args!!0)
+  program <- parseFile (args!!0)
+  let env = evaluateProgram program
   putStrLn $ concat $ fmap prettyPrintEquation $ Map.toList $ env
   repl env
 
