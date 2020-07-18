@@ -12,9 +12,12 @@ import Eval
 -- name-value pairs.
 type Env = Map.Map String Value
 
--- Parse an identifier made of all letters.
+-- Parse an identifier that starts with a letter, and consists of letters and digits.
 alphaIdentifier :: Stream s m Char => ParsecT s u m String
-alphaIdentifier = many1 letter
+alphaIdentifier = do
+  start <- letter
+  part <- many (letter <|> digit)
+  return $ start : part
 
 -- Parse a special identifier like `:1234`.
 numericIdentifier :: Stream s m Char => ParsecT s u m String

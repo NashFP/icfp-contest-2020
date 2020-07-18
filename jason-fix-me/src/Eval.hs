@@ -139,4 +139,5 @@ stdlib = [
   ("mul", binaryMathFunction "mul" (*)),
   ("div", binaryMathFunction "div" div),
   ("isnil", isnil),
-  ("plot", plot)]
+  ("plot", plot),
+  ("if0", if0)]
