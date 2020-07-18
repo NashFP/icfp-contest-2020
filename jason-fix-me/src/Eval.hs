@@ -3,9 +3,14 @@ module Eval(Value(..), eval, evaluateProgram, stdlib, repl) where
 import Parse
 import qualified Data.Map as Map
 import System.IO
+import System.IO.Unsafe (unsafePerformIO)
+import qualified Data.ByteString.Lazy.UTF8 as BLU
+import Data.Char (digitToInt, intToDigit)
 import DataTypes
 import Encode
 import Decode
+import Control.Exception
+import Network.HTTP.Simple
 
 class ToValue t where
   toValue :: t -> Value
@@ -58,6 +63,31 @@ modulate other = error $ "attempted to modulate " ++ show other
 demodulate :: Value -> Value
 demodulate (BitStringValue bits) = fst $ decode (BitStringValue bits)
 demodulate other = error $ "attempted to demodulate "++show other
+
+modem :: Value -> Value
+modem x = demodulate $ modulate x
+
+sendToServer :: [Int] -> Value
+sendToServer x =
+  unsafePerformIO $ catch (
+     do
+         request' <- parseRequest ("POST " ++ "https://icfpc2020-api.testkontur.ru/aliens/send?apiKey=8d61d5ef5c3b48d880d5937a4dcd308d")
+         let request = setRequestBodyLBS (BLU.fromString (map intToDigit x)) request'
+         response <- httpLBS request
+         let statuscode = show (getResponseStatusCode response)
+         case statuscode of
+             "200" -> return $ BitStringValue $ map digitToInt (BLU.toString $ getResponseBody response)
+             _ -> error ("Unexpected server response:\nHTTP code: " ++ statuscode ++ "\nResponse body: " ++ BLU.toString (getResponseBody response))
+     ) handler
+     where
+         handler :: SomeException -> IO Value
+         handler ex = error $ "Unexpected server response:\n" ++ show ex
+
+send :: Value -> Value
+send x =
+  let BitStringValue modx = encode x in
+  let result = sendToServer modx in
+  demodulate result
 
 binaryMathFunction :: ToValue t => String -> (Integer -> Integer -> t) -> Value
 binaryMathFunction name f = FunValue name impl
@@ -150,6 +180,8 @@ stdlib = [
   ("plot", plot),
   ("mod", FunValue "mod" modulate),
   ("dem", FunValue "dem" demodulate),
+  ("modem", FunValue "modem" modem),
+  ("send", FunValue "send" send),
   ("if0", if0)]
 
 
@@ -175,5 +207,7 @@ repl env = do
   line <- getLine
   case parse replEntry "<stdin>" line of
     Left errors -> putStrLn $ "syntax error: " ++ show errors
-    Right value -> putStrLn $ show $ eval env value
+    Right value -> do
+      let res = eval env value
+      putStrLn $ show $ res
   repl env
