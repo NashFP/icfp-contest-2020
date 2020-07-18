@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 32afda68cc5428db371daeff23a7f9827e7db8ab55c304b619e3c9b3b86ecd02
+-- hash: 5b5095c3b50913fea9d13760bda79589a9f2b54da18bfd3dd5b21b5c8a8b8b98
 
 name:           wcgw
 version:        0.1.0.0
@@ -71,7 +71,8 @@ test-suite wcgw-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      HUnit >=1.6.0.0
+    , base >=4.7 && <5
     , containers >=0.6.2
     , http-client >=0.6.4
     , http-conduit >=2.2.3
