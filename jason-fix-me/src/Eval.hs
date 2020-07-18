@@ -59,6 +59,9 @@ demodulate :: Value -> Value
 demodulate (BitStringValue bits) = fst $ decode (BitStringValue bits)
 demodulate other = error $ "attempted to demodulate "++show other
 
+modem :: Value -> Value
+modem x = modulate $ demodulate x
+
 binaryMathFunction :: ToValue t => String -> (Integer -> Integer -> t) -> Value
 binaryMathFunction name f = FunValue name impl
   where
@@ -150,6 +153,7 @@ stdlib = [
   ("plot", plot),
   ("mod", FunValue "mod" modulate),
   ("dem", FunValue "dem" demodulate),
+  ("modem", FunValue "modem" modem),
   ("if0", if0)]
 
 
