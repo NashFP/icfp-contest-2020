@@ -35,6 +35,7 @@ instance ToValue Bool where
 ap (FunValue _ f) v = f v
 ap (ConsValue a b) f = ap (ap f a) b
 ap NilValue x = t
+ap other arg = error $ "ap: TypeError: function expected, not " ++ show other
 
 incImpl :: Value -> Value
 incImpl (IntValue i) = IntValue (i + 1)
