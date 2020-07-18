@@ -3,26 +3,21 @@
 module Main where
 
 import System.Environment
-import Network.HTTP.Simple
-import Data.ByteString.Lazy.UTF8 as BLU
-import Data.Map as Map
-import Control.Exception
+-- import Network.HTTP.Simple
+-- import Data.ByteString.Lazy.UTF8 as BLU
+-- import Control.Exception
 
---import Data.Char
---import Encode
---import Decode
+-- import Encode
+-- import Decode
 import Parse
 import Eval
-
-
-prettyPrintEquation (name, value) = name ++ " = " ++ show value ++ "\n"
-
+import qualified Lambda
 
 main = do
   args <- getArgs
   program <- parseFile (args!!0)
+  putStrLn $ concat $ fmap Lambda.prettyPrintEquation $ program
   let env = evaluateProgram program
-  putStrLn $ concat $ fmap prettyPrintEquation $ Map.toList $ env
   repl env
 
 -- stack run "https://icfpc2020-api.testkontur.ru/aliens/send?apiKey=$API_KEY" "1101000"
