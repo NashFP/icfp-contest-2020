@@ -216,7 +216,5 @@ repl env = do
   line <- getLine
   case parse replEntry "<stdin>" line of
     Left errors -> putStrLn $ "syntax error: " ++ show errors
-    Right value -> do
-      let res = eval env value
-      putStrLn $ show $ res
+    Right value -> putStrLn $ show $ eval env value
   repl env

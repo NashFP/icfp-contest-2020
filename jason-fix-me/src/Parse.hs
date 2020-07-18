@@ -14,6 +14,14 @@ data Expression =
   | Apply Expression Expression
   | BitString [Int]
 
+-- We show expressions using a familiar Haskell-like syntax rather than with
+-- all the `ap` markers in it.
+instance Show Expression where
+  show (Constant i) = show i
+  show (Identifier name) = name
+  show (Apply f (Apply g x)) = show f ++ " (" ++ show (Apply g x) ++ ")"
+  show (Apply f x) = show f ++ " " ++ show x
+
 type Parser t = forall s u m . Stream s m Char => ParsecT s u m t
 
 -- Parse an identifier that starts with a letter, and consists of letters and digits.
