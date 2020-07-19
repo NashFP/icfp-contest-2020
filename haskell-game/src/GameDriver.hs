@@ -3,6 +3,8 @@ module GameDriver where
 import DataTypes
 import Comm
 import GameLogic
+import Attacker
+import Defender
 import Debug.Trace
 
 doCreate url playerKey = do
