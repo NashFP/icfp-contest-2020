@@ -52,6 +52,9 @@ subst name value (LcCompose f g) = LcCompose (subst name value f) (subst name va
 
 apply :: LcExpr -> LcExpr -> LcExpr
 apply (LcIdent "i") x = x
+apply (LcApply (LcIdent "cons") (LcConstant x)) (LcConstant y) = LcPair x y
+apply (LcApply (LcIdent "cons") head) (LcIdent "nil") = LcList [head]
+apply (LcApply (LcIdent "cons") head) (LcList tail) = LcList (head : tail)
 apply (LcLambda name body) actual | countFree name body < 2 || isSimpleLc actual = subst name actual body
 apply f x = LcApply f x
 
@@ -89,14 +92,6 @@ translate e (Apply (Apply (Apply (Identifier "s") f) g) x) | isSimple x = transl
 translate e (Identifier "c") = let f : x : y : e' = e in (LcLambda f (LcLambda x (LcLambda y (apply (apply (LcIdent f) (LcIdent y)) (LcIdent x)))), e')
 translate e (Identifier "b") = let f : g : x : e' = e in (LcLambda f (LcLambda g (LcLambda x (apply (LcIdent f) (apply (LcIdent g) (LcIdent x))))), e')
 translate e (Identifier "s") = let f : g : x : e' = e in (LcLambda f (LcLambda g (LcLambda x (apply (apply (LcIdent f) (LcIdent x)) (apply (LcIdent g) (LcIdent x))))), e')
--- *** Enable some syntactic sugar
--- cons 3 5 = (3, 5)
-translate e (Apply (Apply (Identifier "cons") (Constant x)) (Constant y)) = (LcPair x y, e)
--- cons x (cons y nil) = [x, y]
-translate e (Apply (Apply (Identifier "cons") h) t) | isListLike t =
-                                                      let (h', e1) = translate e h
-                                                          (t', e2) = translateTail e1 t
-                                                      in (LcList (h' : t'), e2)
 -- *** Core language
 translate e (Constant i) = (LcConstant i, e)
 translate e (Identifier name) = (LcIdent name, e)
