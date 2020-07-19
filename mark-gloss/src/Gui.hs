@@ -42,23 +42,26 @@ generatePixel minBounds ((x,y),col) =
   let (xf, yf) = galacticCoordsToWindow minBounds (x, y)
   in color col $ translate xf yf $ rectangleSolid 3.0 3.0
 
-addBitmapToPixelMap :: [(Integer,Integer)] -> Color -> Map.Map (Integer,Integer) Color -> Map.Map (Integer,Integer) Color
-addBitmapToPixelMap coords color pixelMap =
+type PixelMap = [((Integer, Integer), Color)]
+
+addBitmapToPixelMap :: ([(Integer,Integer)], Color) -> PixelMap -> PixelMap
+addBitmapToPixelMap (coords, color) pixelMap =
   foldl' addPixel pixelMap coords
   where
-    addPixel pm coord = Map.insertWith keepOld coord color pm
+    addPixel pm coord = (coord, color) : pm
     keepOld n o = o
 
-addBitmapsToPixelMap :: [[(Integer,Integer)]] -> [Color] -> Map.Map (Integer,Integer) Color -> Map.Map (Integer,Integer) Color
-addBitmapsToPixelMap [] _ pixelMap = pixelMap
-addBitmapsToPixelMap (b:bs) (color:colors) pixelMap =
-  addBitmapsToPixelMap bs colors $
-    addBitmapToPixelMap b color pixelMap
+addBitmapsToPixelMap :: [[(Integer,Integer)]] -> [Color] -> PixelMap -> PixelMap
+addBitmapsToPixelMap frames colors pixelMap =
+  foldr addBitmapToPixelMap pixelMap (reverse (zip frames colors))
+
+goodColors :: [Color]
+goodColors = map (\x -> makeColor (x ** 1.7) x (x ** 0.75) 1.0) $ iterate (* 0.65) 1.0
 
 worldToPic :: Env -> World -> Picture
 worldToPic _ (World { bitmaps = bitmaps, minBounds = (minX, minY), pics = []}) =
-  let pixelMap = addBitmapsToPixelMap bitmaps (cycle [blue,red,green,magenta,cyan,white]) Map.empty in
-  Pictures $ map (generatePixel (minX,minY)) (Map.assocs pixelMap)
+  let pixelMap = addBitmapsToPixelMap bitmaps goodColors [] in
+  Pictures $ map (generatePixel (minX,minY)) pixelMap
 worldToPic _ (World { pics = pics }) = Pictures pics
 
 eventHandler :: Env -> Event -> World -> World
