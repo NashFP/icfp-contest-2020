@@ -65,22 +65,20 @@ parsePair (PairValue (x,y)) = (x,y)
 parsePair x = error $ "Expected pair, got "++show x
 
 parseCommand :: AlienData -> Command
-parseCommand (ListValue (IntValue 0:IntValue shipId:pair:[])) =
+parseCommand (ListValue (IntValue 0:IntValue shipId:pair:_)) =
   AccelerateCommand shipId (parsePair pair)
-parseCommand (ListValue (IntValue 1:IntValue shipId:[])) = DetonateCommand shipId
-parseCommand (ListValue (IntValue 1:IntValue shipId:_:[])) = DetonateCommand shipId
-parseCommand (ListValue (IntValue 2:IntValue shipId:target:x3:[])) =
+parseCommand (ListValue (IntValue 1:IntValue shipId:_)) = DetonateCommand shipId
+parseCommand (ListValue (IntValue 2:IntValue shipId:target:x3:rest)) =
   ShootCommand shipId (parsePair target) x3
 parseCommand (ListValue (IntValue commandId:IntValue shipId:rest)) = UnknownCommand commandId shipId rest
 parseCommand (ListValue []) = UnknownCommand 0 0 []
 parseCommand x = error $ "Expected command, got "++show x
 
 parseShipCommand :: Integer -> AlienData -> Command
-parseShipCommand shipId (ListValue (IntValue 0:pair:[])) =
+parseShipCommand shipId (ListValue (IntValue 0:pair:_)) =
   AccelerateCommand shipId (parsePair pair)
-parseShipCommand shipId (ListValue (IntValue 1:[])) = DetonateCommand shipId
-parseShipCommand shipId (ListValue (IntValue 1:_:[])) = DetonateCommand shipId
-parseShipCommand shipId (ListValue (IntValue 2:target:x3:[])) =
+parseShipCommand shipId (ListValue (IntValue 1:_)) = DetonateCommand shipId
+parseShipCommand shipId (ListValue (IntValue 2:target:x3:_)) =
   ShootCommand shipId (parsePair target) x3
 parseShipCommand shipId (ListValue (IntValue commandId:rest)) = UnknownCommand commandId shipId rest
 parseShipCommand shipId (ListValue []) = UnknownCommand 0 shipId []
