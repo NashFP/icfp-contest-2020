@@ -2,7 +2,8 @@ module DataTypes where
 
 data AlienData =
   IntValue Integer |
-  ListValue [AlienData]
+  ListValue [AlienData] |
+  PairValue (Integer,Integer)
   deriving (Eq,Show)
 
 data Role = AttackerRole | DefenderRole
@@ -11,12 +12,12 @@ data Role = AttackerRole | DefenderRole
 data GameInfo = GameInfo AlienData Role AlienData AlienData AlienData
   deriving (Eq,Show)
 
-data Ship = Ship Role Integer [Integer] [Integer] AlienData AlienData AlienData AlienData
+data Ship = Ship Role Integer (Integer,Integer) (Integer,Integer) AlienData AlienData AlienData AlienData
   deriving (Eq,Show)
 
-data Command = AccelerateCommand Integer [Integer] |
+data Command = AccelerateCommand Integer (Integer,Integer) |
   DetonateCommand Integer |
-  ShootCommand Integer [Integer] AlienData |
+  ShootCommand Integer (Integer,Integer) AlienData |
   UnknownCommand Integer Integer [AlienData]
   deriving (Eq,Show)
 
