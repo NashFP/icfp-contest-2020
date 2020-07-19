@@ -11,13 +11,13 @@ import Data.List
 import Debug.Trace
 
 data World =
-  World Bool Value [[(Integer,Integer)]] (Integer,Integer) (Integer,Integer) (Integer,Integer)
+  World Bool Value [[(Integer,Integer)]] (Integer,Integer) (Integer,Integer) (Integer,Integer) [Picture]
 
 createWorldStep :: World -> String
-createWorldStep (World _ NilValue _ (x,y) _ _) =
+createWorldStep (World _ NilValue _ (x,y) _ _ _) =
   "ap ap ap interact galaxy nil ap ap cons " ++ show x ++ " " ++ show y
 
-createWorldStep (World _ state _ (x,y) _ _) =
+createWorldStep (World _ state _ (x,y) _ _ _) =
   "ap ap ap interact galaxy ap dem %" ++ (show $ encode state) ++ " ap ap cons " ++ show x ++ " " ++ show y
 
 generatePixel :: (Integer,Integer) -> ((Integer,Integer),Color) -> Picture
@@ -38,16 +38,17 @@ addBitmapsToPixelMap (b:bs) (color:colors) pixelMap =
     addBitmapToPixelMap b color pixelMap
 
 worldToPic :: Env -> World -> Picture
-worldToPic _ (World _ _ bitmaps _ (minX,minY) _) =
+worldToPic _ (World _ _ bitmaps _ (minX,minY) _ []) =
   let pixelMap = addBitmapsToPixelMap bitmaps (cycle [blue,red,green,magenta,cyan,white]) Map.empty in
   Pictures $ map (generatePixel (minX,minY)) (Map.assocs pixelMap)
+worldToPic _ (World _ _ _ _ _ _ pics) = Pictures pics
 
 eventHandler :: Env -> Event -> World -> World
-eventHandler env (EventKey (MouseButton LeftButton) Up _ (xf,yf)) (World _ state bitmaps _ (minX,minY) maxBounds) =
+eventHandler env (EventKey (MouseButton LeftButton) Up _ (xf,yf)) (World _ state bitmaps _ (minX,minY) maxBounds pics) =
   let x = ((round xf) + 550) `div` 3 in
   let y = 1 + ((round yf) + 350) `div` 3 in
   trace ("click coords = "++show (x+minX)++","++show (y+minY)) (
-  World True state bitmaps (x+minX,y+minY) (minX,minY) maxBounds
+  World True state bitmaps (x+minX,y+minY) (minX,minY) maxBounds pics
   )
 eventHandler env _ world = world
 
@@ -70,11 +71,11 @@ computeAllImageBounds x =
 
 
 iterateWorld :: Env -> Float -> World -> World
-iterateWorld env _ (World changed state bitmaps (x,y) minBounds maxBounds) =
+iterateWorld env _ (World changed state bitmaps (x,y) minBounds maxBounds pics) =
   if not changed then
-    World False state bitmaps (x,y) minBounds maxBounds
+    World False state bitmaps (x,y) minBounds maxBounds pics
   else
-    let worldStep = createWorldStep (World False state bitmaps (x,y) minBounds maxBounds) in
+    let worldStep = createWorldStep (World False state bitmaps (x,y) minBounds maxBounds pics) in
     case parse replEntry "<stdin>" worldStep of
       Left x -> error $ show x
       Right value ->
@@ -83,12 +84,12 @@ iterateWorld env _ (World changed state bitmaps (x,y) minBounds maxBounds) =
         let (newState:bitmapsValue) = valueToList v in
         let bitmaps = filter (\l -> (length l) > 0) $ map (\b -> map valueToCoordinatePair (valueToList b)) bitmapsValue in
         let (minBounds,maxBounds) = computeAllImageBounds bitmaps in
-        World False newState bitmaps (x,y) minBounds maxBounds
+        World False newState bitmaps (x,y) minBounds maxBounds []
         )
 
 
 runApp :: Env -> IO ()
 runApp env = do
-  let startWorld = iterateWorld env 0.0 (World True NilValue [] (0,0) (0,0) (0,0))
+  let startWorld = iterateWorld env 0.0 (World True NilValue [] (0,0) (0,0) (0,0) [])
 
   play (InWindow "NashFP Alien Clicker" (1200, 800) (10,10)) black 1 startWorld (worldToPic env) (eventHandler env) (iterateWorld env)
