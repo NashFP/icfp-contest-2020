@@ -8,9 +8,11 @@ doCreate url playerKey = do
   let req = ListValue [IntValue 1, IntValue 0]
   resp <- sendToServer url playerKey req
   case resp of
-    ListValue [ IntValue 1, ListValue [ListValue [IntValue 0, IntValue attackPlayerKey], ListValue [IntValue 1, IntValue defenderPlayerKey]]] -> do
-      putStrLn $ "attack player key = " ++ show attackPlayerKey
+    ListValue [ IntValue 1, ListValue [ListValue [IntValue 0, IntValue attackerPlayerKey], ListValue [IntValue 1, IntValue defenderPlayerKey]]] -> do
+      putStrLn $ "attacker player key = " ++ show attackerPlayerKey
       putStrLn $ "defender player key = " ++ show defenderPlayerKey
+      writeFile "defender.key" (show defenderPlayerKey)
+      writeFile "attacker.key" (show attackerPlayerKey)
     _ -> error $ "Unexpected reply from server "++show resp
 
 parseGameInfo :: AlienData -> GameInfo
