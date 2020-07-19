@@ -30,12 +30,12 @@ createWorldStep (World { state = state, clickPoint = (x, y) }) =
 windowCoordsToGalactic :: (Integer, Integer) -> (Float, Float) -> (Integer, Integer)
 windowCoordsToGalactic (minX, minY) (xf, yf) =
   (minX + ((round xf) + 550) `div` 3,
-   minY + 1 + ((round yf) + 350) `div` 3)
+   minY - 1 + ((round (-yf)) + 350) `div` 3)
 
 galacticCoordsToWindow :: (Integer, Integer) -> (Integer, Integer) -> (Float, Float)
 galacticCoordsToWindow (minX, minY) (x, y) =
   (fromInteger (3 * (x - minX) - 550),
-   fromInteger (3 * (y - minY) - 350))
+   0 - fromInteger (3 * (y - minY) - 350))
 
 generatePixel :: (Integer,Integer) -> ((Integer,Integer),Color) -> Picture
 generatePixel minBounds ((x,y),col) =
