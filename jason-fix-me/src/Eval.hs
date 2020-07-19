@@ -139,6 +139,37 @@ if0Impl (IntValue 0) = t
 if0Impl (IntValue _) = f
 if0Impl other = error $ "if0: TypeError: number expected, not " ++ show other
 
+f38 :: Value
+f38 = FunValue "f38" f38'
+
+f38' :: Value -> Value
+f38' v = FunValue ("(" ++ "f38" ++ " " ++ show v ++ ")") (f38'' v)
+
+f38'' :: Value -> Value -> Value
+f38'' protocol (ConsValue c1 c2) =
+  let (IntValue flag:newState:d:[]) = valueToList (ConsValue c1 c2) in
+    if flag == 0 then
+    trace ("f38 flag = 0 with newState "++(show $ modulate newState)) (
+      ConsValue (modem newState) (multipleDraw d)
+      )
+    else
+      trace ("f38 flag = 1 with newState "++(show $ modulate newState)++" and d "++(show d)) (
+      ap (ap (ap Eval.interact protocol) (modem newState)) (send d)
+      )
+f38'' _ other = error $ "f38" ++ ": TypeError: second argument: ConsValue expected, not " ++ show other
+
+interact :: Value
+interact = FunValue "interact" interact'
+
+interact' :: Value -> Value
+interact' v = FunValue ("(" ++ "interact" ++ " " ++ show v ++ ")") (interact'' v)
+
+interact'' :: Value -> Value -> Value
+interact'' v1 v2 = FunValue ("(" ++ "interact" ++ " " ++ show v1 ++ " "++ show v2 ++ ")") (interact''' v1 v2)
+
+interact''' :: Value -> Value -> Value -> Value
+interact''' protocol state vector = (ap (ap f38 protocol) (ap (ap protocol state) vector))
+
 draw = FunValue "draw" (\v -> BitmapValue $ render $ fmap valueToCoordinatePair $ valueToList v)
 
 writeBitmaps :: [Value] -> [Value]
@@ -150,18 +181,13 @@ writeBitmaps bitmaps =
 
 renderBitmap NilValue = NilValue
 renderBitmap v =
-  trace ("Rendering bitmap "++show v) (
     let cp = fmap valueToCoordinatePair $ valueToList v in
-    trace ("Coordinate pairs "++show cp) (
       BitmapValue $ render cp
-    )
-  )
+
 multipleDraw :: Value -> Value
 multipleDraw v =
-  trace ("Multipledraw "++show v) (
   let bitmaps = map renderBitmap $ valueToList v in
     listToValue $ writeBitmaps bitmaps
-  )
 
 listToValue :: [Value] -> Value
 listToValue [] = NilValue
@@ -175,7 +201,6 @@ valueToCoordinatePair (ConsValue (IntValue x) (IntValue y)) = (x, y)
 
 render :: [(Integer, Integer)] -> [String]
 render pairs =
-  trace ("render pair "++show pairs) (
   let minX = minimum $ fmap fst pairs
       maxX = maximum $ fmap fst pairs
       minY = minimum $ fmap snd pairs
@@ -183,7 +208,6 @@ render pairs =
   in [[if elem (x, y) pairs then '*' else '.'
          | x <- [minX..maxX]]
        | y <- [minY..maxY]]
-       )
 
 
 stdlib :: [(String, Value)]
@@ -213,6 +237,8 @@ stdlib = [
   ("dem", FunValue "dem" demodulate),
   ("modem", FunValue "modem" modem),
   ("send", FunValue "send" send),
+  ("f38", f38),
+  ("interact", Eval.interact),
   ("if0", if0)]
 
 
