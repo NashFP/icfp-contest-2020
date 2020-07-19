@@ -205,7 +205,7 @@ render pairs =
       maxX = maximum $ fmap fst pairs
       minY = minimum $ fmap snd pairs
       maxY = maximum $ fmap snd pairs
-  in [[if elem (x, y) pairs then '*' else '.'
+  in "" : (intercalate " " $ map show [minX, maxX, minY, maxY]) : [[if elem (x, y) pairs then '*' else '.'
          | x <- [minX..maxX]]
        | y <- [minY..maxY]]
 
