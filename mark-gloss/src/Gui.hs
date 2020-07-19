@@ -10,46 +10,65 @@ import qualified Data.Map.Strict as Map
 import Data.List
 import Debug.Trace
 
-data World =
-  World Bool Value [[(Integer,Integer)]] (Integer,Integer) (Integer,Integer) (Integer,Integer) [Picture]
+data World = World
+  { changed :: Bool
+  , state :: Value
+  , bitmaps :: [[(Integer,Integer)]]
+  , clickPoint :: (Integer,Integer)
+  , minBounds :: (Integer,Integer)
+  , maxBounds ::(Integer,Integer)
+  , pics :: [Picture]
+  }
 
 createWorldStep :: World -> String
-createWorldStep (World _ NilValue _ (x,y) _ _ _) =
+createWorldStep (World { state = NilValue, clickPoint = (x, y) }) =
   "ap ap ap interact galaxy nil ap ap cons " ++ show x ++ " " ++ show y
 
-createWorldStep (World _ state _ (x,y) _ _ _) =
+createWorldStep (World { state = state, clickPoint = (x, y) }) =
   "ap ap ap interact galaxy ap dem %" ++ (show $ encode state) ++ " ap ap cons " ++ show x ++ " " ++ show y
 
-generatePixel :: (Integer,Integer) -> ((Integer,Integer),Color) -> Picture
-generatePixel (minX,minY) ((x,y),col) =
-  color col $ translate (fromInteger ((3 * (x-minX)-550))) (fromInteger ((3 * (y-minY))-350)) (rectangleSolid 3.0 3.0)
+windowCoordsToGalactic :: (Integer, Integer) -> (Float, Float) -> (Integer, Integer)
+windowCoordsToGalactic (minX, minY) (xf, yf) =
+  (minX + ((round xf) + 550) `div` 3,
+   minY - 1 + ((round (-yf)) + 350) `div` 3)
 
-addBitmapToPixelMap :: [(Integer,Integer)] -> Color -> Map.Map (Integer,Integer) Color -> Map.Map (Integer,Integer) Color
-addBitmapToPixelMap coords color pixelMap =
+galacticCoordsToWindow :: (Integer, Integer) -> (Integer, Integer) -> (Float, Float)
+galacticCoordsToWindow (minX, minY) (x, y) =
+  (fromInteger (3 * (x - minX) - 550),
+   0 - fromInteger (3 * (y - minY) - 350))
+
+generatePixel :: (Integer,Integer) -> ((Integer,Integer),Color) -> Picture
+generatePixel minBounds ((x,y),col) =
+  let (xf, yf) = galacticCoordsToWindow minBounds (x, y)
+  in color col $ translate xf yf $ rectangleSolid 3.0 3.0
+
+type PixelMap = [((Integer, Integer), Color)]
+
+addBitmapToPixelMap :: ([(Integer,Integer)], Color) -> PixelMap -> PixelMap
+addBitmapToPixelMap (coords, color) pixelMap =
   foldl' addPixel pixelMap coords
   where
-    addPixel pm coord = Map.insertWith keepOld coord color pm
+    addPixel pm coord = (coord, color) : pm
     keepOld n o = o
 
-addBitmapsToPixelMap :: [[(Integer,Integer)]] -> [Color] -> Map.Map (Integer,Integer) Color -> Map.Map (Integer,Integer) Color
-addBitmapsToPixelMap [] _ pixelMap = pixelMap
-addBitmapsToPixelMap (b:bs) (color:colors) pixelMap =
-  addBitmapsToPixelMap bs colors $
-    addBitmapToPixelMap b color pixelMap
+addBitmapsToPixelMap :: [[(Integer,Integer)]] -> [Color] -> PixelMap -> PixelMap
+addBitmapsToPixelMap frames colors pixelMap =
+  foldr addBitmapToPixelMap pixelMap (reverse (zip frames colors))
+
+goodColors :: [Color]
+goodColors = map (\x -> makeColor (x ** 1.7) x (x ** 0.75) 1.0) $ iterate (* 0.65) 1.0
 
 worldToPic :: Env -> World -> Picture
-worldToPic _ (World _ _ bitmaps _ (minX,minY) _ []) =
-  let pixelMap = addBitmapsToPixelMap bitmaps (cycle [blue,red,green,magenta,cyan,white]) Map.empty in
-  Pictures $ map (generatePixel (minX,minY)) (Map.assocs pixelMap)
-worldToPic _ (World _ _ _ _ _ _ pics) = Pictures pics
+worldToPic _ (World { bitmaps = bitmaps, minBounds = (minX, minY), pics = []}) =
+  let pixelMap = addBitmapsToPixelMap bitmaps goodColors [] in
+  Pictures $ map (generatePixel (minX,minY)) pixelMap
+worldToPic _ (World { pics = pics }) = Pictures pics
 
 eventHandler :: Env -> Event -> World -> World
-eventHandler env (EventKey (MouseButton LeftButton) Up _ (xf,yf)) (World _ state bitmaps _ (minX,minY) maxBounds pics) =
-  let x = ((round xf) + 550) `div` 3 in
-  let y = 1 + ((round yf) + 350) `div` 3 in
-  trace ("click coords = "++show (x+minX)++","++show (y+minY)) (
-  World True state bitmaps (x+minX,y+minY) (minX,minY) maxBounds pics
-  )
+eventHandler env (EventKey (MouseButton LeftButton) Up _ (xf, yf)) world =
+  let (x, y) = windowCoordsToGalactic (minBounds world) (xf, yf)
+  in trace ("click coords = "++show x++","++show y)
+       (world { changed = True, clickPoint = (x, y) })
 eventHandler env _ world = world
 
 computeImageBounds :: [(Integer,Integer)] -> [Integer]
@@ -71,25 +90,26 @@ computeAllImageBounds x =
 
 
 iterateWorld :: Env -> Float -> World -> World
-iterateWorld env _ (World changed state bitmaps (x,y) minBounds maxBounds pics) =
-  if not changed then
-    World False state bitmaps (x,y) minBounds maxBounds pics
-  else
-    let worldStep = createWorldStep (World False state bitmaps (x,y) minBounds maxBounds pics) in
-    case parse replEntry "<stdin>" worldStep of
-      Left x -> error $ show x
-      Right value ->
-        let v = eval env value in
-        trace ("Got response "++show v++"  length "++show (length (valueToList v))) (
-        let (newState:bitmapsValue) = valueToList v in
-        let bitmaps = filter (\l -> (length l) > 0) $ map (\b -> map valueToCoordinatePair (valueToList b)) bitmapsValue in
-        let (minBounds,maxBounds) = computeAllImageBounds bitmaps in
-        World False newState bitmaps (x,y) minBounds maxBounds []
-        )
+iterateWorld env _ world@(World {changed=False}) = world
+iterateWorld env _ world =
+  let worldStep = createWorldStep world in
+  case parse replEntry "<stdin>" worldStep of
+    Left x -> error $ show x
+    Right value ->
+      let v = eval env value in
+      trace ("Got response "++show v++"  length "++show (length (valueToList v))) (
+      let (newState:bitmapsValue) = valueToList v
+          bitmaps = filter (\l -> (length l) > 0) $ map (\b -> map valueToCoordinatePair (valueToList b)) bitmapsValue
+          (minBounds,maxBounds) = computeAllImageBounds bitmaps
+      in World { changed=False, state=newState, bitmaps=bitmaps, clickPoint=clickPoint world,
+                 minBounds=minBounds, maxBounds=maxBounds, pics=[] }
+      )
 
 
 runApp :: Env -> IO ()
 runApp env = do
-  let startWorld = iterateWorld env 0.0 (World True NilValue [] (0,0) (0,0) (0,0) [])
+  let startWorld = iterateWorld env 0.0 (
+        World { changed=True, state=NilValue, bitmaps=[], clickPoint=(0,0),
+                minBounds=(0,0), maxBounds=(0,0), pics=[] })
 
   play (InWindow "NashFP Alien Clicker" (1200, 800) (10,10)) black 1 startWorld (worldToPic env) (eventHandler env) (iterateWorld env)

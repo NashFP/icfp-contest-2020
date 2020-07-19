@@ -3,6 +3,8 @@ module GameDriver where
 import DataTypes
 import Comm
 import GameLogic
+import Attacker
+import Defender
 import Debug.Trace
 
 doCreate url playerKey = do
@@ -119,7 +121,7 @@ sendJoin url playerKey = do
 sendStart :: String -> String -> IO GameResponse
 sendStart url playerKey = do
   let joinCommand = ListValue [IntValue 3, IntValue (read playerKey::Integer),
-       ListValue [IntValue 2,IntValue 1,IntValue 3,IntValue 4]]
+       ListValue [IntValue 1,IntValue 2,IntValue 1,IntValue 1]]
   response <- sendToServer url playerKey joinCommand
   return $ parseResponse response
 
