@@ -25,7 +25,7 @@ getAttackerCommand ticks numShips enemies (ShipData shipId (myX,myY) (myXVel,myY
                          then -1 else 0
                     else yAccel in
     let accelCommand = [AccelerateCommand shipId $ (xAccel',yAccel')] in
-    let cmds = if shipId < 2 && ticks > 10 && numShips < 3 then
+    let cmds = if shipId < 2 && ticks > 10 && numShips < 12 then
                  (SpawnCommand shipId [0,0,0,1]) : accelCommand
                else
                  accelCommand
