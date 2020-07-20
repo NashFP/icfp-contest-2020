@@ -19,7 +19,7 @@ getAttackerCommand ticks enemies (ShipData shipId (myX,myY) (myXVel,myYVel)) =
     let (ShipData _ (enemyX,enemyY) _) = findClosest (myX,myY) enemies in
     let enemyDist = distanceSquared (myX,myY) (enemyX,enemyY) in
     if ticks `rem` 3 == 0 then
-      (ShootCommand shipId (enemyX,enemyY) (IntValue 0)) : cmds
+      (ShootCommand shipId (enemyX,enemyY) 2 0 4) : cmds
     else
       cmds
 
