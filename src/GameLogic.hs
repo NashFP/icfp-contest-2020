@@ -50,7 +50,7 @@ computeAngle (xi,yi) =
 computeOrbitVector :: (Integer,Integer) -> (Integer,Integer)
 computeOrbitVector (xi,yi) =
   let angle = computeAngle (xi,yi) in
-  let xdist = round (5 * (-sin angle)) in
-  let ydist = round (5 * (cos angle)) in
+  let xdist = round (-sin angle) in
+  let ydist = round (cos angle) in
   (xdist,ydist)
   
