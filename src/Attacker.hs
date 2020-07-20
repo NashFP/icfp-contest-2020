@@ -12,8 +12,8 @@ getAttackerCommands (GameState _ _ shipsAndCommands) =
 getAttackerCommand :: [ShipData] -> ShipData -> [Command]
 getAttackerCommand enemies (ShipData shipId (myX,myY) (myXVel,myYVel)) =
     let (orbitX,orbitY) = computeOrbitVector (myX,myY) in
-    let xAccel = if myXVel > 8 then 1 else if myXVel < -8 then -1 else orbitX in
-    let yAccel = if myYVel > 8 then 1 else if myYVel < -8 then -1 else orbitY in
+    let xAccel = if myXVel > 5 then 1 else if myXVel < -5 then -1 else orbitX in
+    let yAccel = if myYVel > 5 then 1 else if myYVel < -5 then -1 else orbitY in
     let cmds = [AccelerateCommand shipId $ (xAccel,yAccel)] in
 
     let (ShipData _ (enemyX,enemyY) _) = findClosest (myX,myY) enemies in
