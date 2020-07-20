@@ -32,8 +32,6 @@ library
       Comm
       GameDriver
       GameLogic
-      Attacker
-      Defender
   other-modules:
       Paths_haskell_game
   hs-source-dirs:

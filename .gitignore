@@ -1,4 +1,6 @@
 .stack-work/
 attacker.key
 defender.key
+.idea
+*.iml
 *~

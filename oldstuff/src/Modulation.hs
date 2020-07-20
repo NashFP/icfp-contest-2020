@@ -18,7 +18,7 @@ decodeInt :: [Int] -> (Integer, [Int])
 decodeInt s =
   let (len, s') = decodeUnary s in
     decodeIntBits 0 (4 * len) s'
-
+    
 decode :: [Int] -> (AlienData,[Int])
 decode (0:0:tail) = (ListValue [],tail)
 decode (0:1:tail) =
@@ -29,10 +29,7 @@ decode (1:1:tail) =
   let (x,tail') = decode tail in
     let (y,tail'') = decode tail' in
       case y of
-        IntValue i ->
-          case x of
-            IntValue x0 -> (PairValue (x0,i),tail'')
-            ListValue x0 -> (ListValue [x,y],tail'')
+        IntValue i -> (ListValue [x,y],tail'')
         ListValue l -> (ListValue (x:l),tail'')
 
 demodulate :: [Int] -> AlienData
@@ -60,6 +57,4 @@ modulate (ListValue (x:xs)) =
 modulate (IntValue x) =
   if x >= 0 then 0:1:encodeInt x
   else 1:0:encodeInt (-x)
-modulate (PairValue (x,y)) =
-  (1:1:modulate (IntValue x))++(modulate (IntValue y))
 

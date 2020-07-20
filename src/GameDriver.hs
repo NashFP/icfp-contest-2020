@@ -3,6 +3,9 @@ module GameDriver where
 import DataTypes
 import Comm
 import GameLogic
+import Attacker
+import Defender
+import Debug.Trace
 
 doCreate url playerKey = do
   let req = ListValue [IntValue 1, IntValue 0]
@@ -38,12 +41,15 @@ parseRole x = error $ "Expected role, got "++show x
 
 parseShip :: AlienData -> Ship
 parseShip (ListValue (role:IntValue shipId:position:velocity:x4:x5:x6:x7:rest)) =
-  Ship (parseRole role) shipId (parseVector position) (parseVector velocity) x4 x5 x6 x7
+  Ship (parseRole role) shipId (parsePair position) (parsePair velocity) x4 x5 x6 x7
 parseShip x = error $ "Expected ship, got "++show x
 
 parseShipAndCommands :: AlienData -> ShipAndCommands
-parseShipAndCommands (ListValue ((ship):commands)) =
-  ShipAndCommands (parseShip ship) (map parseCommand commands)
+parseShipAndCommands (ListValue (ship:ListValue commands:[])) =
+  trace ("parseShipAndCommands commands="++show commands) (
+  let (Ship role shipId position velocity x4 x5 x6 x7) = parseShip ship in
+    ShipAndCommands (Ship role shipId position velocity x4 x5 x6 x7) (map (parseShipCommand shipId) commands)
+  )
 parseShipAndCommands x = error $ "Expected list with ship and commands, got "++show x
 
 parseInt :: AlienData -> Integer
@@ -54,22 +60,43 @@ parseVector :: AlienData -> [Integer]
 parseVector (ListValue values) = map parseInt values
 parseVector x = error $ "Expected vector, got "++show x
 
+parsePair :: AlienData -> (Integer,Integer)
+parsePair (PairValue (x,y)) = (x,y)
+parsePair x = error $ "Expected pair, got "++show x
+
 parseCommand :: AlienData -> Command
-parseCommand (ListValue (IntValue 0:IntValue shipId:vec:[])) =
-  AccelerateCommand shipId (parseVector vec)
-parseCommand (ListValue (IntValue 1:IntValue shipId:[])) = DetonateCommand shipId
-parseCommand (ListValue (IntValue 2:IntValue shipId:target:x3:[])) =
-  ShootCommand shipId (parseVector target) x3
+parseCommand (ListValue (IntValue 0:IntValue shipId:pair:_)) =
+  AccelerateCommand shipId (parsePair pair)
+parseCommand (ListValue (IntValue 1:IntValue shipId:_)) = DetonateCommand shipId
+parseCommand (ListValue (IntValue 2:IntValue shipId:target:x3:rest)) =
+  ShootCommand shipId (parsePair target) x3
 parseCommand (ListValue (IntValue commandId:IntValue shipId:rest)) = UnknownCommand commandId shipId rest
 parseCommand (ListValue []) = UnknownCommand 0 0 []
 parseCommand x = error $ "Expected command, got "++show x
 
+parseShipCommand :: Integer -> AlienData -> Command
+parseShipCommand shipId (ListValue (IntValue 0:pair:_)) =
+  AccelerateCommand shipId (parsePair pair)
+parseShipCommand shipId (ListValue (IntValue 1:_)) = DetonateCommand shipId
+parseShipCommand shipId (ListValue (IntValue 2:target:x3:_)) =
+  ShootCommand shipId (parsePair target) x3
+parseShipCommand shipId (ListValue (IntValue commandId:rest)) = UnknownCommand commandId shipId rest
+parseShipCommand shipId (ListValue []) = UnknownCommand 0 shipId []
+parseShipCommand shipId x = error $ "Expected ship command, got "++show x
+
 unparseVector :: [Integer] -> AlienData
 unparseVector v = ListValue $ map IntValue v
 
+unparsePair :: (Integer,Integer) -> AlienData
+unparsePair (x,y) = PairValue (x,y)
+
 unparseCommand:: Command -> AlienData
 unparseCommand (AccelerateCommand shipId vec) =
-  ListValue (IntValue 0:IntValue shipId:(unparseVector vec):[])
+  ListValue (IntValue 0:IntValue shipId:(unparsePair vec):[])
+unparseCommand (DetonateCommand shipId) =
+  ListValue (IntValue 1:IntValue shipId:[])
+unparseCommand (ShootCommand shipId target x3) =
+  ListValue (IntValue 2:IntValue shipId:(unparsePair target):x3:[])
 
 parseGameStage :: AlienData -> GameStage
 parseGameStage (IntValue 0) = GameNotStarted
