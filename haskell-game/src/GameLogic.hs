@@ -38,3 +38,19 @@ findClosest' myPos currClosest currDistSquared ((ShipData shipId otherPos vel):s
     findClosest' myPos currClosest currDistSquared ss
 
 
+computeAngle :: (Integer,Integer) -> Double
+computeAngle (xi,yi) =
+  let x = fromIntegral xi in
+  let y = fromIntegral yi in
+  if (xi == 0) && (yi == 0) then
+    0.0
+  else
+    atan2 y x
+
+computeOrbitVector :: (Integer,Integer) -> (Integer,Integer)
+computeOrbitVector (xi,yi) =
+  let angle = computeAngle (xi,yi) in
+  let xdist = round (5 * (-sin angle)) in
+  let ydist = round (5 * (cos angle)) in
+  (xdist,ydist)
+  
