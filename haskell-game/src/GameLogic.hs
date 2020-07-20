@@ -6,7 +6,7 @@ enemyRole :: Role -> Role
 enemyRole AttackerRole = DefenderRole
 enemyRole DefenderRole = AttackerRole
 
-data ShipData = ShipData Integer (Integer,Integer) (Integer,Integer)
+data ShipData = ShipData Integer (Integer,Integer) (Integer,Integer) deriving (Eq,Show)
 
 getShipsAndCommandsForRole :: Role -> [ShipAndCommands]-> [ShipAndCommands]
 getShipsAndCommandsForRole role shipsAndCommands =
