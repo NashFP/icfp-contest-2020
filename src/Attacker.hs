@@ -27,7 +27,9 @@ getAttackerCommand ticks enemies (ShipData shipId (myX,myY) (myXVel,myYVel)) =
     let cmds = [AccelerateCommand shipId $ (xAccel',yAccel')] in
 
     let (ShipData _ (enemyX,enemyY) (enemyXVel,enemyYVel)) = findClosest (myX,myY) enemies in
-    if ticks `rem` 3 == 0 then
+    if length enemies == 1 && distanceSquared (myX+myXVel,myY+myYVel) (enemyX+enemyXVel,enemyY+enemyYVel) < 64 then
+      (DetonateCommand shipId) : cmds
+    else if ticks `rem` 3 == 0 then
       (ShootCommand shipId (enemyX+enemyXVel,enemyY+enemyYVel) 48) : cmds
     else
       cmds
