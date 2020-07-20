@@ -119,7 +119,7 @@ sendJoin url playerKey = do
 sendStart :: String -> String -> IO GameResponse
 sendStart url playerKey = do
   let joinCommand = ListValue [IntValue 3, IntValue (read playerKey::Integer),
-       ListValue [IntValue 1,IntValue 2,IntValue 1,IntValue 1]]
+       ListValue [IntValue 300,IntValue 4,IntValue 10,IntValue 2]]
   response <- sendToServer url playerKey joinCommand
   return $ parseResponse response
 
