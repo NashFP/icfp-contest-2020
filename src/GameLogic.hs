@@ -6,7 +6,7 @@ enemyRole :: Role -> Role
 enemyRole AttackerRole = DefenderRole
 enemyRole DefenderRole = AttackerRole
 
-data ShipData = ShipData Integer (Integer,Integer) (Integer,Integer) deriving (Eq,Show)
+data ShipData = ShipData Integer (Integer,Integer) (Integer,Integer) Integer deriving (Eq,Show)
 
 getShipsAndCommandsForRole :: Role -> [ShipAndCommands]-> [ShipAndCommands]
 getShipsAndCommandsForRole role shipsAndCommands =
@@ -18,22 +18,22 @@ getShipData :: Role -> [ShipAndCommands] -> [ShipData]
 getShipData role shipsAndCommands =
   map getPosAndVelocity $ getShipsAndCommandsForRole role shipsAndCommands
     where
-      getPosAndVelocity (ShipAndCommands (Ship _ shipId pos velocity _ _ _ _) _) = ShipData shipId pos velocity
+      getPosAndVelocity (ShipAndCommands (Ship _ shipId pos velocity (energy:rest) _ _ _) _) = ShipData shipId pos velocity energy
 
 distanceSquared :: (Integer,Integer) -> (Integer,Integer) -> Integer
 distanceSquared (x1,y1) (x2,y2) =
   (x2-x1) * (x2-x1) + (y2-y1) * (y2-y1)
 
 findClosest :: (Integer,Integer) -> [ShipData] -> ShipData
-findClosest pos ((ShipData shipId otherPos vel):ss) =
-  findClosest' pos (ShipData shipId otherPos vel) (distanceSquared pos otherPos) ss
+findClosest pos ((ShipData shipId otherPos vel energy):ss) =
+  findClosest' pos (ShipData shipId otherPos vel energy) (distanceSquared pos otherPos) ss
 
 findClosest' :: (Integer,Integer) -> ShipData -> Integer -> [ShipData] -> ShipData
 findClosest' myPos currClosest currDistSquared [] = currClosest
-findClosest' myPos currClosest currDistSquared ((ShipData shipId otherPos vel):ss) =
+findClosest' myPos currClosest currDistSquared ((ShipData shipId otherPos vel energy):ss) =
   let dist = distanceSquared myPos otherPos in
   if dist < currDistSquared then
-    findClosest' myPos (ShipData shipId otherPos vel) dist ss
+    findClosest' myPos (ShipData shipId otherPos vel energy) dist ss
   else
     findClosest' myPos currClosest currDistSquared ss
 

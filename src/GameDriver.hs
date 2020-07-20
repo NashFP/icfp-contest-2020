@@ -41,7 +41,7 @@ parseRole x = error $ "Expected role, got "++show x
 
 parseShip :: AlienData -> Ship
 parseShip (ListValue (role:IntValue shipId:position:velocity:x4:x5:x6:x7:rest)) =
-  Ship (parseRole role) shipId (parsePair position) (parsePair velocity) x4 x5 x6 x7
+  Ship (parseRole role) shipId (parsePair position) (parsePair velocity) (parseVector x4) x5 x6 x7
 parseShip x = error $ "Expected ship, got "++show x
 
 parseShipAndCommands :: AlienData -> ShipAndCommands

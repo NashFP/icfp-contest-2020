@@ -12,7 +12,7 @@ data Role = AttackerRole | DefenderRole
 data GameInfo = GameInfo AlienData Role AlienData AlienData AlienData
   deriving (Eq,Show)
 
-data Ship = Ship Role Integer (Integer,Integer) (Integer,Integer) AlienData AlienData AlienData AlienData
+data Ship = Ship Role Integer (Integer,Integer) (Integer,Integer) [Integer] AlienData AlienData AlienData
   deriving (Eq,Show)
 
 data Command = AccelerateCommand Integer (Integer,Integer) |

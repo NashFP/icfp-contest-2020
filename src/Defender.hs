@@ -11,7 +11,7 @@ getDefenderCommands (GameState ticks _ shipsAndCommands) =
   concatMap (getDefenderCommand ticks enemies) myShips
 
 getDefenderCommand :: Integer -> [ShipData] -> ShipData -> [Command]
-getDefenderCommand ticks enemies (ShipData shipId (myX,myY) (myXVel,myYVel)) =
+getDefenderCommand ticks enemies (ShipData shipId (myX,myY) (myXVel,myYVel) energy) =
     let (orbitX,orbitY) = computeOrbitVector (myX,myY) in
     let xAccel = if myXVel > 5 then 1 else if myXVel < -5 then -1 else orbitX in
     let yAccel = if myYVel > 5 then 1 else if myYVel < -5 then -1 else orbitY in
