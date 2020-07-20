@@ -10,14 +10,16 @@ getShipsAndCommandsForRole role shipsAndCommands =
 
 getAttackerCommands ::GameState -> [Command]
 getAttackerCommands (GameState _ _ shipsAndCommands) =
-  map doIdle $ (getShipsAndCommandsForRole AttackerRole) shipsAndCommands
-    where
-      doIdle (ShipAndCommands (Ship _ shipId _ _ _ _ _ _) _) = AccelerateCommand shipId (1,0)
+  []
+--  map doIdle $ (getShipsAndCommandsForRole AttackerRole) shipsAndCommands
+--    where
+--      doIdle (ShipAndCommands (Ship _ shipId _ _ _ _ _ _) _) = AccelerateCommand shipId [1,0]
 
 
 getDefenderCommands ::GameState -> [Command]
 getDefenderCommands (GameState _ _ shipsAndCommands) =
-  map doIdle $ (getShipsAndCommandsForRole DefenderRole) shipsAndCommands
-    where
-      doIdle (ShipAndCommands (Ship _ shipId _ _ _ _ _ _) _) = AccelerateCommand shipId (0,1)
+  []
+--  map doIdle $ (getShipsAndCommandsForRole DefenderRole) shipsAndCommands
+--    where
+--      doIdle (ShipAndCommands (Ship _ shipId _ _ _ _ _ _) _) = AccelerateCommand shipId [0,1]
 
