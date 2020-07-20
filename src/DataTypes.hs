@@ -18,6 +18,7 @@ data Ship = Ship Role Integer (Integer,Integer) (Integer,Integer) [Integer] Alie
 data Command = AccelerateCommand Integer (Integer,Integer) |
   DetonateCommand Integer |
   ShootCommand Integer (Integer,Integer) Integer |
+  SpawnCommand Integer [Integer] |
   UnknownCommand Integer Integer [AlienData]
   deriving (Eq,Show)
 

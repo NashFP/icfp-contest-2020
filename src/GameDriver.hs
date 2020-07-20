@@ -70,6 +70,8 @@ parseCommand (ListValue (IntValue 0:IntValue shipId:pair:_)) =
 parseCommand (ListValue (IntValue 1:IntValue shipId:_)) = DetonateCommand shipId
 parseCommand (ListValue (IntValue 2:IntValue shipId:target:IntValue x1:rest)) =
   ShootCommand shipId (parsePair target) x1 
+parseCommand (ListValue (IntValue 3:IntValue shipId:ListValue args:rest)) =
+  SpawnCommand shipId args
 parseCommand (ListValue (IntValue commandId:IntValue shipId:rest)) = UnknownCommand commandId shipId rest
 parseCommand (ListValue []) = UnknownCommand 0 0 []
 parseCommand x = error $ "Expected command, got "++show x
@@ -80,6 +82,8 @@ parseShipCommand shipId (ListValue (IntValue 0:pair:_)) =
 parseShipCommand shipId (ListValue (IntValue 1:_)) = DetonateCommand shipId
 parseShipCommand shipId (ListValue (IntValue 2:target:IntValue x1:_)) =
   ShootCommand shipId (parsePair target) x1 
+parseShipCommand shipId (ListValue (IntValue 3:ListValue args:rest)) =
+  SpawnCommand shipId args
 parseShipCommand shipId (ListValue (IntValue commandId:rest)) = UnknownCommand commandId shipId rest
 parseShipCommand shipId (ListValue []) = UnknownCommand 0 shipId []
 parseShipCommand shipId x = error $ "Expected ship command, got "++show x
@@ -97,6 +101,8 @@ unparseCommand (DetonateCommand shipId) =
   ListValue (IntValue 1:IntValue shipId:[])
 unparseCommand (ShootCommand shipId target x1) =
   ListValue (IntValue 2:IntValue shipId:(unparsePair target):IntValue x1:[])
+unparseCommand (SpawnCommand shipId vals) =
+  ListValue (IntValue 3:IntValue shipId:(unparseVector vals):[])
 
 parseGameStage :: AlienData -> GameStage
 parseGameStage (IntValue 0) = GameNotStarted

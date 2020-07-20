@@ -7,10 +7,10 @@ getAttackerCommands ::GameState -> [Command]
 getAttackerCommands (GameState ticks _ shipsAndCommands) =
   let enemies = getShipData DefenderRole shipsAndCommands in
   let myShips = getShipData AttackerRole shipsAndCommands in
-  concatMap (getAttackerCommand ticks enemies) myShips
+  concatMap (getAttackerCommand ticks (length myShips) enemies) myShips
 
-getAttackerCommand :: Integer -> [ShipData] -> ShipData -> [Command]
-getAttackerCommand ticks enemies (ShipData shipId (myX,myY) (myXVel,myYVel) energy) =
+getAttackerCommand :: Integer -> Int -> [ShipData] -> ShipData -> [Command]
+getAttackerCommand ticks numShips enemies (ShipData shipId (myX,myY) (myXVel,myYVel) energy) =
     let (orbitX,orbitY) = computeOrbitVector (myX,myY) in
     let xAccel = if myXVel > 5 then 1 else if myXVel < -5 then -1 else orbitX in
     let yAccel = if myYVel > 5 then 1 else if myYVel < -5 then -1 else orbitY in
@@ -24,10 +24,14 @@ getAttackerCommand ticks enemies (ShipData shipId (myX,myY) (myXVel,myYVel) ener
                     else if (myY > 0) && (myYVel < 0) 
                          then -1 else 0
                     else yAccel in
-    let cmds = [AccelerateCommand shipId $ (xAccel',yAccel')] in
+    let accelCommand = [AccelerateCommand shipId $ (xAccel',yAccel')] in
+    let cmds = if shipId < 2 && ticks > 10 && numShips < 3 then
+                 (SpawnCommand shipId [0,0,0,1]) : accelCommand
+               else
+                 accelCommand
+                 in
     let myPredX = myX + myXVel in
     let myPredY = myY + myYVel in
-
 
     let (ShipData _ (enemyX,enemyY) (enemyXVel,enemyYVel) energy) = findClosest (myX,myY) enemies in
     let enemyPredX = enemyX + enemyXVel in
