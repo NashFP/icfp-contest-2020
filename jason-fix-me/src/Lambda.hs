@@ -5,6 +5,7 @@ module Lambda(prettyPrintEquation) where
 import Data.List(intersperse)
 import Eval
 import Parse
+import Text.Show(showParen)
 
 data LcExpr =
   LcConstant Integer
@@ -15,13 +16,15 @@ data LcExpr =
   | LcApply LcExpr LcExpr
 
 instance Show LcExpr where
-  show (LcConstant i) = show i
-  show (LcIdent name) = name
-  show (LcPair i j) = show (i, j)
-  show (LcList exprs) = "[" ++ concat (intersperse ", " (fmap show exprs)) ++ "]"
-  show (LcLambda name body) = "(\\" ++ name ++ " -> " ++ show body ++ ")"
-  show (LcApply f e@(LcApply _ _)) = show f ++ " (" ++ show e ++ ")"
-  show (LcApply f x) = show f ++ " " ++ show x
+  showsPrec _ (LcConstant i) = showString $ show i
+  showsPrec _ (LcIdent name) = showString name
+  showsPrec _ (LcPair i j) = showString $ show (i, j)
+  showsPrec _ (LcList exprs) = showString $ "[" ++ concat (intersperse ", " (fmap show exprs)) ++ "]"
+  showsPrec p (LcLambda name body) = showParen (p > 1) $ showString $ renderLambda name body
+  showsPrec p (LcApply f x) = showParen (p > 9) $ showsPrec 9 f . showString " " . showsPrec 10 x
+
+renderLambda left (LcLambda name body) = renderLambda (left ++ " " ++ name) body
+renderLambda left body = "\\" ++ left ++ " -> " ++ show body
 
 countFree :: String -> LcExpr -> Int
 countFree _ (LcConstant _) = 0
@@ -115,4 +118,9 @@ renderSimplified expr =
   in show $ renameVariables [] variableNames expr'
 
 prettyPrintEquation (name, expr) =
-  name ++ " = " ++ renderSimplified expr ++ "\n"
+  let (expr', _) = translate variableNames expr
+      expr'' = renameVariables [] variableNames expr'
+      pp :: String -> LcExpr -> String
+      pp left (LcLambda a b) = pp (left ++ " " ++ a) b
+      pp left other = left ++ " = " ++ show other ++ "\n"
+  in pp name expr''
