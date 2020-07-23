@@ -21,7 +21,7 @@ instance Show Value where
   show (ConsValue h t) = "[" ++ show h ++ showAsListTail t ++ "]"
   show (FunValue name f) = name
   show (BitmapValue lines) = concat $ map (++ "\n") lines
-  show (BitStringValue bits) = intercalate "" $ map show bits
+  show (BitStringValue bits) = '%' : concat (map show bits)
 
 instance Eq Value where
   (==) (IntValue x) (IntValue y) = x == y
