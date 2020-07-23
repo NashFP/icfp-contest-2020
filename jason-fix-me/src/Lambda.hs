@@ -22,10 +22,27 @@ instance Show LcExpr where
   showsPrec _ (LcPair i j) = showString $ show (i, j)
   showsPrec _ (LcList exprs) = showString $ "[" ++ concat (intersperse ", " (fmap show exprs)) ++ "]"
   showsPrec p (LcLambda name body) = showParen (p > 1) $ showString $ renderLambda name body
-  showsPrec p (LcApply f x) = showParen (p > 9) $ showsPrec 9 f . showString " " . showsPrec 10 x
+  showsPrec p (LcApply f x) = showApply p f x
 
 renderLambda left (LcLambda name body) = renderLambda (left ++ " " ++ name) body
 renderLambda left body = "\\" ++ left ++ " -> " ++ show body
+
+showApply p f@(LcApply (LcIdent name) argLeft) argRight = case lookup name operators of
+  Just (op, pLeft, pRight) -> showParen (p >= max pRight pLeft) $
+    showsPrec pLeft argLeft . showString (" " ++ op ++ " ") . showsPrec pRight argRight
+  Nothing -> showApplyBasic p f argRight
+showApply p f x = showApplyBasic p f x
+
+showApplyBasic p f x = showParen (p > 9) $ showsPrec 9 f . showString " " . showsPrec 10 x
+
+operators = [
+  ("add", ("+", 6, 6)),
+  ("mul", ("*", 7, 7)),
+  ("lt", ("<", 4, 5)),
+  ("eq", ("==", 4, 5)),
+  ("div", ("`div`", 7, 8)),
+  ("or", ("||", 2, 2)),
+  ("and", ("&&", 3, 3))]
 
 countFree :: String -> LcExpr -> Int
 countFree _ (LcConstant _) = 0
