@@ -165,4 +165,4 @@ render (Apply f (Apply g x)) = render f ++ " (" ++ render (Apply g x) ++ ")"
 render (Apply f x) = render f ++ " " ++ render x
 
 prettyPrintEquation (name, expr) =
-  name ++ " = " ++ render expr ++ "\n      = " ++ renderSimplified expr ++ "\n" 
+  name ++ " = " ++ renderSimplified expr ++ "\n"

@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts, RankNTypes #-}
 
-module Parse(Expression(..), parseFile, parse, replEntry) where
+module Parse(Expression(..), parseFile, parse, replEntry, identifier) where
 
 import System.IO
 import Text.Parsec

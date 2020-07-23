@@ -1,0 +1,84 @@
+-- Hand-written annotations to galaxy.txt.
+--
+-- This file is an attempt to make sense of the aliencode in galaxy.txt.
+-- The program in jason-fix-me uses it to substitute human-readable names
+-- when it pretty-prints the aliencode; run with the command:
+--
+-- cd ../jason-fix-me && stack run ../data/galaxy.txt ../data/galaxy-annotations.txt
+
+:1110 = make1X x -- returns the list [1, x]
+:1111 = make2XY x y -- returns the list [2, x, y]
+:1112 = make3XY x y -- returns the list [3, x, y]
+:1113 = make4XY x y -- returns the list [4, x, y]
+:1114 = make5X x -- returns the list [5, x]
+
+:1115 = cons h t -- makes a pair
+:1116 = headOr default xs -- `car xs`, or `default` if xs is empty.
+
+:1117 = pow2 x -- 2 ** x
+:1118 = log2 x -- base 2 logarithm of x, rounded down; log2 0 is 0.
+:1119 = logb x b -- logarithm base b of x, rounted down; logb 0 b is 0.
+:1120 = abs x -- absolute value of the integer x
+:1121 = max x y -- returns x or y, whichever is greater
+:1122 = min x y -- returns x or y, whichever is less
+
+:1124 = hasElem xs x -- true if x is an element of xs
+:1126 = map xs f -- map the elements of xs through f (note the arguments are swapped)
+:1127 = mapIndexed xs f -- like map, except f also receives the element index as a second argument
+:1128 = length xs -- the length of the list xs
+:1131 = concat2 a b -- string together the two lists a and b (like (++) in Haskell)
+:1132 = foldl xs start f -- left fold (like `foldl f start xs` in Haskell)
+:1133 = foldr xs start f -- right fold (like `foldr (swap f) start xs` in Haskell, I think)
+:1134 = concat lists -- string together a list of lists
+:1135 = filter xs test -- filter list elements by a predicate `test` (note the arguments are swapped)
+:1136 = filterIndexed xs test -- like filter, but pass the element index to `test` as a second argument
+:1137 = any xs test -- true if any element of xs passes the `test`
+:1138 = revrange n -- reversed integer range: revrange 4 == [3, 2, 1, 0]
+:1139 = range n -- integer range: range 4 = [0, 1, 2, 3]
+:1141 = getAtUnchecked xs n -- get nth element of xs (counting from 0)
+:1142 = getAt xs n -- get element n of xs, or nil if length xs <= n
+:1143 = sum xs -- sum of all the numbers in xs
+:1144 = insertAt xs i v -- inserts v at index i within xs: `take i xs ++ [v] ++ drop i xs`
+
+:1146 = maximum xs -- return the maximum of a list of numbers
+:1147 = maximumBy xs lt -- maximum of a list of values under the order imposed by comparison-function `lt`
+:1149 = minimum xs -- minimum of a list of values
+:1150 = sortOn xs score -- sort a list in order of ascending score, using the given scoring function
+:1152 = sortBy xs lt -- sort a list in the order imposed by comparison-function `lt`
+:1153 = filterWithSuccessor xs test -- elements x of xs `test x y` is true, where y is the next element; always retains the last element
+:1155 = uniqSort xs -- sort the list of numbers xs in ascending order, discarding duplicates
+
+:1162 = vec2 x y -- 2d vector constructor. Same as `cons`.
+:1166 = rect4 x0 y0 w h -- rectangle with top-left corner (x0, y0) and dimensions (w, h).
+:1167 = rect p d -- rectangle with top-left corner p and dimensions d
+:1168 = square center r -- return a rectangle with the given center, and width/height 2r+1.
+:1169 = rectTranslate rect v -- translate the rect by 2d vector v.
+:1172 = vAdd u v -- Vector addition.
+:1173 = vTranslate v dx dy -- translate the vector v by given integers (dx, dy)
+:1174 = vAddX v dx -- translate v in the x direction by dx units
+:1175 = vX v -- get x coordinate of vector v
+:1176 = maximumY pts -- return maximum y coordinate of a list of vectors
+:1178 = vY v -- get y coordinate of vector v
+:1179 = vAddY v dy -- translate v in the y direction by dy units
+:1180 = vScale v k -- multiply both coordinates of v by the number k
+:1181 = vDist u v -- a distance metric, max (abs (u.x - v.x)) (abs (u.y - v.y))
+:1183 = vListTranslate vs d -- add vector d to each vector in the list vs
+:1187 = vListAddX vs dx -- add dx to x coordinate of each vector in the list vs
+:1188 = vListAddY vs dy -- add dy to y coordinate of each vector in the list vs
+
+:1189 = make0XNil x -- returns the list [0, x, nil]
+:1190 = make0XY x y -- returns the list [0, x, y]
+:1191 = make1XY x y -- returns the list [1, x, y]
+
+:1194 = drawLine u v -- list of (vDist u v) linearly interpolated vectors starting at u, ending at v
+:1193 = drawLineDotted u v k -- like linterp, but discarding some points to leave a vDist of k between points, except the last
+:1195 = drawHorizLine x y w -- list of w points in a horizontal line from (x + w - 1, y) to (x, y)
+:1196 = drawHorizLineDotted x y w -- like hline, but drop every other point
+:1197 = drawVertLine x y h -- list of h points in a vertical line from (x, y + h - 1) to (x, y)
+:1198 = drawSquare x -- list of points drawing an axis-aligned square with vertices at (-x, -x) and (x, x)
+--:1199 = (\x -> :1201 (neg x) (neg x) (add (mul 2 x) 1) (add (mul 2 x) 1))
+:1200 = drawRect x y w h -- list of points drawing an axis-aligned rectangle with vertexes at (x, y) and (x+w-1, y+h-1)
+:1201 = fillRect x y w h -- list of points in an axis-aligned rectangle with vertex at (x, y) and dimensions (w, h)
+:1202 = fillRectAux x y h a -- helper function for fillRect
+
+:1203 = isInRange x start stop -- true if start <= x < stop

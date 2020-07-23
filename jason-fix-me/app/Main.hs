@@ -12,11 +12,13 @@ import System.Environment
 import Parse
 import Eval
 import qualified Lambda
+import qualified SideTable
 
 main = do
   args <- getArgs
   program <- parseFile (args!!0)
-  putStrLn $ concat $ fmap Lambda.prettyPrintEquation $ program
+  substitutions <- if length args > 1 then SideTable.load (args!!1) else return SideTable.empty
+  putStrLn $ concat $ fmap Lambda.prettyPrintEquation $ SideTable.applySideTable substitutions $ program
   writeFile "pics.txt" ""
   let env = evaluateProgram program
   repl env

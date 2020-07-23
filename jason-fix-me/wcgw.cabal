@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5b5095c3b50913fea9d13760bda79589a9f2b54da18bfd3dd5b21b5c8a8b8b98
+-- hash: 69a9ece9c6515cc177d8b71f2eaeb63f51acfdc68fad7b40314aa2ccbdd17ec0
 
 name:           wcgw
 version:        0.1.0.0
@@ -34,6 +34,7 @@ library
       Lambda
       Lib
       Parse
+      SideTable
   other-modules:
       Paths_wcgw
   hs-source-dirs:
