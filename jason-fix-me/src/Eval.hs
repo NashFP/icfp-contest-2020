@@ -1,4 +1,4 @@
-module Eval(Value(..), eval, evaluateProgram, stdlib, repl) where
+module Eval(ToValue(..), eval, ap, evaluateProgram, stdlib, repl) where
 
 import Debug.Trace
 import Parse
@@ -26,6 +26,11 @@ instance ToValue Integer where
 instance ToValue Bool where
   toValue True = t
   toValue False = f
+
+instance ToValue t => ToValue [t] where
+  toValue [] = NilValue
+  toValue (h:t) = ConsValue (toValue h) (toValue t)
+
 
 -- The type of environments. An environment is basically a collection of
 -- name-value pairs.

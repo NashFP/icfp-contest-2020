@@ -3,6 +3,7 @@
 module Lambda(prettyPrintEquation) where
 
 import Data.List(intersperse)
+import DataTypes(Value(..))
 import Eval
 import Parse
 import Text.Show(showParen)
@@ -124,3 +125,21 @@ prettyPrintEquation (name, expr) =
       pp left (LcLambda a b) = pp (left ++ " " ++ a) b
       pp left other = left ++ " = " ++ show other ++ "\n"
   in pp name expr''
+
+-- Evaluate lambda calculus expressions. Not currently used.
+--
+-- The idea was to let QuickCheck chew on this. Evaluating the output of
+-- `translate` should give the same results as evaluating aliencode
+-- directly. Unfortunately, we don't have a good way of checking equality of
+-- values since most are functions.
+evalLc :: [(String, Value)] -> LcExpr -> Value
+evalLc _ (LcConstant i) = IntValue i
+evalLc env (LcIdent name) =
+  case lookup name env of
+    Nothing -> error $ "no such variable found in scope: " ++ name
+    Just value -> value
+evalLc _ (LcPair x y) = ConsValue (IntValue x) (IntValue y)
+evalLc env (LcList exprs) = toValue (map (evalLc env) exprs)
+evalLc env funexpr@(LcLambda param body) =
+  FunValue (show funexpr) (\argument -> evalLc ((param, argument) : env) body)
+evalLc env (LcApply f x) = ap (evalLc env f) (evalLc env x)
