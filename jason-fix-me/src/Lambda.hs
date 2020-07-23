@@ -132,32 +132,5 @@ renderSimplified expr =
   let (expr', _) = translate variableNames expr
   in show $ renameVariables [] variableNames expr'
 
-
-renderTail :: Expression -> String
-renderTail (Identifier "nil") = ""
-renderTail (Apply (Apply (Identifier "cons") h) t) = ", " ++ render h ++ renderTail t
-
--- *** Simplify by identities
--- i x = x
-render (Apply (Identifier "i") x) = render x
--- c f x y = f y x
-render (Apply (Apply (Apply (Identifier "c") f) x) y) = render (Apply (Apply f y) x)
--- b f g x = f (g x)
-render (Apply (Apply (Apply (Identifier "b") f) g) x) = render (Apply f (Apply g x))
--- s f g x = f x (g x)
-render (Apply (Apply (Apply (Identifier "s") f) g) x) | isSimple x = render (Apply (Apply f x) (Apply g x))
--- *** Render using some syntactic sugar
--- b f g = f . g    (using haskell's `.` operator to mean "compose")
-render (Apply (Apply (Identifier "b") f) g) = render f ++ " . " ++ render g
--- cons 3 5 = (3, 5)
-render (Apply (Apply (Identifier "cons") (Constant x)) (Constant y)) = "(" ++ show x ++ ", " ++ show y ++ ")"
--- cons x (cons y nil) = [x, y]
-render (Apply (Apply (Identifier "cons") h) t) | isListLike t = "[" ++ render h ++ renderTail t ++ "]"
--- *** Core notation
-render (Constant i) = show i
-render (Identifier name) = name
-render (Apply f (Apply g x)) = render f ++ " (" ++ render (Apply g x) ++ ")"
-render (Apply f x) = render f ++ " " ++ render x
-
 prettyPrintEquation (name, expr) =
   name ++ " = " ++ renderSimplified expr ++ "\n"
