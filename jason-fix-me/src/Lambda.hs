@@ -109,24 +109,6 @@ renameVariables renames available (LcLambda name body) =
 renameVariables renames available (LcApply f x) = LcApply (renameVariables renames available f) (renameVariables renames available x)
 
 
--- b (b f)
--- = \x
-
--- b (b b)
--- = compose (compose compose)
--- = \f -> compose (compose f)
--- = \f -> \g -> \y -> (compose f) (g y)
--- = \f -> \g -> \y -> compose f (g y)
--- = \f -> \g -> \y -> compose f (g y)
--- = \f -> \g -> \y -> \x -> f (g y z)    -- Compose 1-arg to 2-arg.
-
--- b (b b) . b (b b)
--- = comp12 . comp12
--- = \f -> comp12 (comp12 f)
--- = \f g -> comp12 (comp12 f) g
--- = \f g x y -> comp12 f (g x y)
--- = \f g x y z w -> f (g x y z w)  -- Compose 1-arg to 4-arg.
-
 renderSimplified :: Expression -> String
 renderSimplified expr =
   let (expr', _) = translate variableNames expr
