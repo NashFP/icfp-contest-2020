@@ -13,7 +13,6 @@ data LcExpr =
   | LcList [LcExpr]
   | LcLambda String LcExpr
   | LcApply LcExpr LcExpr
-  | LcCompose LcExpr LcExpr
 
 instance Show LcExpr where
   show (LcConstant i) = show i
@@ -23,7 +22,6 @@ instance Show LcExpr where
   show (LcLambda name body) = "(\\" ++ name ++ " -> " ++ show body ++ ")"
   show (LcApply f e@(LcApply _ _)) = show f ++ " (" ++ show e ++ ")"
   show (LcApply f x) = show f ++ " " ++ show x
-  show (LcCompose f g) = "(" ++ show f ++ " . " ++ show g ++ ")"
 
 countFree :: String -> LcExpr -> Int
 countFree _ (LcConstant _) = 0
@@ -33,7 +31,6 @@ countFree x (LcList exprs) = sum (fmap (countFree x) exprs)
 countFree x (LcLambda name _) | name == x = 0
 countFree x (LcLambda _ body) = countFree x body
 countFree x (LcApply f y) = countFree x f + countFree x y
-countFree x (LcCompose f g) = countFree x f + countFree x g
 
 isSimpleLc (LcConstant _) = True
 isSimpleLc (LcIdent _) = True
@@ -48,7 +45,6 @@ subst name value (LcList exprs) = LcList (fmap (subst name value) exprs)
 subst name value (LcLambda param body) | param /= name = LcLambda param (subst name value body)
 subst _ _ expr@(LcLambda _ _) = expr
 subst name value (LcApply f arg) = apply (subst name value f) (subst name value arg)
-subst name value (LcCompose f g) = LcCompose (subst name value f) (subst name value g)
 
 apply :: LcExpr -> LcExpr -> LcExpr
 apply (LcIdent "i") x = x
@@ -111,7 +107,6 @@ renameVariables renames available (LcLambda name body) =
       newName : available' = available
   in LcLambda newName (renameVariables renames' available' body)
 renameVariables renames available (LcApply f x) = LcApply (renameVariables renames available f) (renameVariables renames available x)
-renameVariables renames available (LcCompose f g) = LcCompose (renameVariables renames available f) (renameVariables renames available g)
 
 
 -- b (b f)
