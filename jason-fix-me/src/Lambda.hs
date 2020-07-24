@@ -57,7 +57,9 @@ operators = [
   ("eq", ("==", 4, 5)),
   ("div", ("`div`", 7, 8)),
   ("or", ("||", 2, 2)),
-  ("and", ("&&", 3, 3))]
+  ("and", ("&&", 3, 3)),
+  ("concat2", ("++", 5, 5)),
+  ("getAtUnchecked", ("!!", 9, 10))]
 
 countFree :: String -> LcExpr -> Int
 countFree _ (LcConstant _) = 0
