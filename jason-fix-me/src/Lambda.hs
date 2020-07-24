@@ -117,18 +117,20 @@ translate e (Apply f x) =
       (x', e2) = translate e1 x
   in (apply f' x', e2)
 
--- Make the variable names a little nicer
+-- Make the variable names a little nicer. `translate` uses scads of variable
+-- names, but most of them disappear due to β-reduction in `apply`. This function
+-- renames translated code like `(\v36 -> \v54 -> v36)` to `(\x -> \y -> x)`.
 renameVariables :: [(String, String)] -> [String] -> LcExpr -> LcExpr
-renameVariables _ _ expr@(LcConstant _) = expr
-renameVariables renames available (LcIdent name) = LcIdent (maybe name id $ lookup name renames)
-renameVariables _ _ expr@(LcPair _ _) = expr
-renameVariables renames available (LcList exprs) = LcList (fmap (renameVariables renames available) exprs)
-renameVariables renames available (LcLambda name body) =
-  let renames' = (name, newName) : renames
-      newName : available' = available
-  in LcLambda newName (renameVariables renames' available' body)
-renameVariables renames available (LcApply f x) = LcApply (renameVariables renames available f) (renameVariables renames available x)
-
+renameVariables renames available expr = case expr of
+  LcConstant _ -> expr
+  LcIdent name -> LcIdent (maybe name id $ lookup name renames)
+  LcPair _ _ -> expr
+  LcList exprs -> LcList (fmap (renameVariables renames available) exprs)
+  LcLambda name body ->
+    let renames' = (name, newName) : renames
+        newName : available' = available
+    in LcLambda newName (renameVariables renames' available' body)
+  LcApply f x -> LcApply (renameVariables renames available f) (renameVariables renames available x)
 
 renderSimplified :: Expression -> String
 renderSimplified expr =
