@@ -37,6 +37,9 @@ showApply p (LcApply (LcIdent "add") argLeft) (LcApply (LcIdent "neg") argRight)
   showApply p (LcApply (LcIdent "sub") argLeft) argRight
 showApply p (LcApply (LcIdent "add") (LcApply (LcIdent "neg") argLeft)) argRight =
   showApply p (LcApply (LcIdent "sub") argRight) argLeft
+-- Rearrange == operands to be more idiomatic
+showApply p (LcApply (LcIdent "eq") (LcConstant k)) argRight | not (isConstant argRight) =
+  showApply p (LcApply (LcIdent "eq") argRight) (LcConstant k)
 -- Use infix operator syntax!
 showApply p f@(LcApply (LcIdent name) argLeft) argRight =
   case lookup name operators of
