@@ -17,7 +17,7 @@ data LcExpr =
   | LcApply LcExpr LcExpr
 
 instance Show LcExpr where
-  showsPrec _ (LcConstant i) = showString $ show i
+  showsPrec p (LcConstant i) = showParen (i < 0 && p > 0) $ showString $ show i
   showsPrec _ (LcIdent name) = showString name
   showsPrec _ (LcPair i j) = showString $ show (i, j)
   showsPrec _ (LcList exprs) = showString $ "[" ++ concat (intersperse ", " (fmap show exprs)) ++ "]"
@@ -72,6 +72,7 @@ apply (LcIdent "i") x = x
 apply (LcApply (LcIdent "cons") (LcConstant x)) (LcConstant y) = LcPair x y
 apply (LcApply (LcIdent "cons") head) (LcIdent "nil") = LcList [head]
 apply (LcApply (LcIdent "cons") head) (LcList tail) = LcList (head : tail)
+apply (LcIdent "neg") (LcConstant i) = LcConstant (-i)
 apply (LcLambda name body) actual | countFree name body < 2 || isSimpleLc actual = subst name actual body
 apply f x = LcApply f x
 
