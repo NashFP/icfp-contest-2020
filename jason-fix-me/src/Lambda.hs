@@ -95,6 +95,12 @@ apply (LcIdent "i") x = x
 apply (LcApply (LcIdent "cons") (LcConstant x)) (LcConstant y) = LcPair x y
 apply (LcApply (LcIdent "cons") head) (LcIdent "nil") = LcList [head]
 apply (LcApply (LcIdent "cons") head) (LcList tail) = LcList (head : tail)
+apply (LcLambda x (LcApply (LcIdent y) (LcIdent z))) left
+  | x == y && x == z =
+    apply (LcIdent "or") left
+apply (LcLambda x (LcLambda y (LcApply (LcApply (LcIdent v1) (LcIdent v2)) (LcIdent v3)))) left
+  | x == v1 && y == v2 && x == v1 =
+    apply (LcIdent "and") left
 apply (LcIdent "neg") (LcConstant i) = LcConstant (-i)
 apply (LcLambda name body) actual | countFree name body < 2 || isSimpleLc actual = subst name actual body
 apply f x = LcApply f x
