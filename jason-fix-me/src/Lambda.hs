@@ -2,7 +2,7 @@
 
 module Lambda(prettyPrintEquation) where
 
-import Data.List(intersperse)
+import Data.List(intersperse, intercalate)
 import DataTypes(Value(..))
 import Eval
 import Parse
@@ -15,6 +15,7 @@ data LcExpr =
   | LcList [LcExpr]
   | LcLambda String LcExpr
   | LcApply LcExpr LcExpr
+  | LcLet String LcExpr LcExpr
 
 isConstant (LcConstant _) = True
 isConstant _ = False
@@ -26,9 +27,13 @@ instance Show LcExpr where
   showsPrec _ (LcList exprs) = showString $ "[" ++ concat (intersperse ", " (fmap show exprs)) ++ "]"
   showsPrec p (LcLambda name body) = showParen (p > 1) $ showString $ renderLambda name body
   showsPrec p (LcApply f x) = showApply p f x
+  showsPrec p e@(LcLet _ _ _) = showParen (p > 1) $ showString $ renderLet [] e
 
 renderLambda left (LcLambda name body) = renderLambda (left ++ " " ++ name) body
 renderLambda left body = "\\" ++ left ++ " -> " ++ show body
+
+renderLet left (LcLet name expr body) = renderLet (left ++ [name ++ " = " ++ show expr]) body
+renderLet left body = "let { " ++ intercalate "; " left ++ " } in " ++ show body
 
 showApply :: Int -> LcExpr -> LcExpr -> ShowS
 -- Render some kinds of addition as subtraction
@@ -75,6 +80,8 @@ countFree x (LcList exprs) = sum (fmap (countFree x) exprs)
 countFree x (LcLambda name _) | name == x = 0
 countFree x (LcLambda _ body) = countFree x body
 countFree x (LcApply f y) = countFree x f + countFree x y
+countFree x (LcLet name _ _) | name == x = 0
+countFree x (LcLet _ expr body) = countFree x expr + countFree x body
 
 isSimpleLc (LcConstant _) = True
 isSimpleLc (LcIdent _) = True
@@ -89,6 +96,10 @@ subst name value (LcList exprs) = LcList (fmap (subst name value) exprs)
 subst name value (LcLambda param body) | param /= name = LcLambda param (subst name value body)
 subst _ _ expr@(LcLambda _ _) = expr
 subst name value (LcApply f arg) = apply (subst name value f) (subst name value arg)
+subst name value (LcLet binding expr body)
+  | binding /= name =
+  LcLet binding (subst name value expr) (subst name value body)
+subst _ _ expr@(LcLet _ _ _) = expr
 
 apply :: LcExpr -> LcExpr -> LcExpr
 apply (LcIdent "i") x = x
@@ -103,6 +114,8 @@ apply (LcLambda x (LcLambda y (LcApply (LcApply (LcIdent v1) (LcIdent v2)) (LcId
     apply (LcIdent "and") left
 apply (LcIdent "neg") (LcConstant i) = LcConstant (-i)
 apply (LcLambda name body) actual | countFree name body < 2 || isSimpleLc actual = subst name actual body
+apply (LcLambda name body) actual | countFree name actual == 0 = LcLet name actual body
+apply (LcLet name expr body) actual | countFree name actual == 0 = LcLet name expr (apply body actual)
 apply f x = LcApply f x
 
 
@@ -161,6 +174,11 @@ renameVariables renames available expr = case expr of
         newName : available' = available
     in LcLambda newName (renameVariables renames' available' body)
   LcApply f x -> LcApply (renameVariables renames available f) (renameVariables renames available x)
+  LcLet name expr body ->
+    let renames' = (name, newName) : renames
+        newName : available' = available
+        recur = renameVariables renames' available'
+    in LcLet newName (recur expr) (recur body)
 
 renderSimplified :: Expression -> String
 renderSimplified expr =
