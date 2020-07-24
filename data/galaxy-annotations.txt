@@ -6,6 +6,214 @@
 --
 -- cd ../jason-fix-me && stack run ../data/galaxy.txt ../data/galaxy-annotations.txt
 
+
+-- Compressed images
+--
+-- A "compressed image" is a pair of integers that can be decoded into a
+-- list of points by `decompress`.
+
+:1029 = cimgGalaxyIcon
+-- ..***..
+-- .....*.
+-- .***..*
+-- *.*.*.*
+-- *..***.
+-- .*.....
+-- ..***..
+
+:1030 = cimgAp
+-- **
+-- *.
+
+:1031 = cimgTuningFork
+-- ****
+-- *.*.
+-- *.*.
+-- *.*.
+
+:1032 = cimgSqrt2
+-- *******
+-- *.....*
+-- *..**.*
+-- *.*.*.*
+-- *.*...*
+-- *.....*
+-- *******
+
+:1034 = cimgSolidSquare5
+-- *****
+-- *****
+-- *****
+-- *****
+-- *****
+
+:1035 = cimgTwoSquares
+-- ***..
+-- ***..
+-- *****
+-- ..***
+-- ..***
+
+:1036 = cimgEq
+-- ***
+-- *..
+-- ***
+
+:1037 = cimgHut
+-- ****
+-- **.*
+-- **.*
+-- **.*
+
+:1038 = cimgEllipsis
+-- *.*.*.*
+
+:1039 = cimgTheta
+-- .***.
+-- *...*
+-- **.**
+-- *...*
+-- .***.
+
+:1040 = cimgSkipButton
+-- *...*
+-- **..*
+-- ***.*
+-- **..*
+-- *...*
+
+:1041 = cimgX
+-- ****
+-- **.*
+-- *.**
+-- ****
+
+:1042 = cimgY
+-- ****
+-- **.*
+-- *..*
+-- ****
+
+:1080 = cimgUfo
+-- .***.
+-- .....
+-- *****
+-- .....
+-- .***.
+
+:1081 = cimgPong
+-- *...*
+-- *...*
+-- *.*.*
+-- *...*
+-- *...*
+
+:1082 = cimgBoxedTornado
+-- *******
+-- *.....*
+-- *****.*
+-- ***.***
+-- *.*****
+-- *.....*
+-- *******
+
+:1083 = cimgTeamRed1
+-- ...
+-- ...
+-- ..*
+
+:1084 = cimgTeamRed2
+-- ....
+-- .*.*
+-- ..*.
+-- .*.*
+
+:1085 = cimgTeamRed3
+-- *...*
+-- .***.
+-- .***.
+-- .***.
+-- *...*
+
+:1086 = cimgTeamRed4
+-- **.**
+-- *****
+-- .***.
+-- *****
+-- **.**
+
+:1087 = cimgTeamGold1
+-- ...
+-- ...
+-- ..*
+
+:1088 = cimgTeamGold2
+-- ....
+-- ..*.
+-- .*.*
+-- ..*.
+
+:1089 = cimgTeamGold3
+-- ..*..
+-- .***.
+-- **.**
+-- .***.
+-- ..*..
+
+:1090 = cimgTeamGold4
+-- .***.
+-- *****
+-- **.**
+-- *****
+-- .***.
+
+:1091 = teamRedIcons -- List of the four "team red" icons, as compressed images
+:1092 = teamGoldIcons -- List of the four "team gold" icons, as compressed images
+
+:1093 = cimgH
+-- *...*
+-- *...*
+-- **.**
+-- *...*
+-- *...*
+
+:1097 = cimgCheckers
+-- *.*.*
+-- .*.*.
+-- *.*.*
+-- .*.*.
+-- *.*.*
+
+:1098 = cimgHorizStripes
+-- *****
+-- .....
+-- *****
+-- .....
+-- *****
+
+:1099 = cimgVertStripes
+-- *.*.*
+-- *.*.*
+-- *.*.*
+-- *.*.*
+-- *.*.*
+
+:1100 = cimgDotSquare
+-- *****
+-- *...*
+-- *.*.*
+-- *...*
+-- *****
+
+:1101 = cimgEasterIslandHead
+-- .***.
+-- .*...
+-- .****
+-- .***.
+-- *....
+
+
+
 :1110 = make1X x -- returns the list [1, x]
 :1111 = make2XY x y -- returns the list [2, x, y]
 :1112 = make3XY x y -- returns the list [3, x, y]
@@ -24,7 +232,7 @@
 
 :1124 = hasElem xs x -- true if x is an element of xs
 :1126 = map xs f -- map the elements of xs through f (note the arguments are swapped)
-:1127 = mapIndexed xs f -- like map, except f also receives the element index as a second argument
+:1127 = mapIndexed xs f i -- like map, except f also receives the element index (starting with i, typically 0) as a second argument
 :1128 = length xs -- the length of the list xs
 :1131 = concat2 a b -- string together the two lists a and b (like (++) in Haskell)
 :1132 = foldl xs start f -- left fold (like `foldl f start xs` in Haskell)
@@ -40,9 +248,9 @@
 :1143 = sum xs -- sum of all the numbers in xs
 :1144 = insertAt xs i v -- inserts v at index i within xs: `take i xs ++ [v] ++ drop i xs`
 
-:1146 = maximum xs -- return the maximum of a list of numbers
+:1146 = maximum xs -- return the maximum of a nonempty list of numbers
 :1147 = maximumBy xs lt -- maximum of a list of values under the order imposed by comparison-function `lt`
-:1149 = minimum xs -- minimum of a list of values
+:1149 = minimum xs -- minimum of a nonempty list of values
 :1150 = sortOn xs score -- sort a list in order of ascending score, using the given scoring function
 :1152 = sortBy xs lt -- sort a list in the order imposed by comparison-function `lt`
 :1153 = filterWithSuccessor xs test -- elements x of xs `test x y` is true, where y is the next element; always retains the last element
@@ -82,3 +290,32 @@
 :1202 = fillRectAux x y h a -- helper function for fillRect
 
 :1203 = isInRange x start stop -- true if start <= x < stop
+:1204 = vInRect v rect -- true if the point v is in the given rectangle
+:1205 = drawNumFrame n -- list of points (1..=n, 0) and (0, 1..=n), a frame for a nonnegative alien number
+:1206 = drawNumBits bits n -- list of points: drawNumFrame n, plus the given bits drawn inside the frame
+:1207 = toBitsAux k -- convert k to binary. List of 0s and 1s, least significant bit first. Empty list if k=0.
+:1208 = toBits0 k nbits -- convert k to binary. List of exactly nbits bits, least significant bit first.
+:1209 = toBits k -- convert k to binary. List of 0s and 1s, least significant bit first. [0] if k=0.
+:1210 = sqrt k -- square root of k, rounded up. 0 if k is negative.
+:1212 = drawNumAux addOrigin n -- draw aliencode number representing n. If addOrigin is true, also fill in the origin.
+:1213 = drawNumAuxSize addOrigin n size -- like drawNumAux, but don't autocompute the best square size
+:1214 = drawNum n -- draw aliencode number representing n
+:1215 = drawNumLeft n -- like drawNum, but drawing in the second quadrant (nonpositive x, nonnegative y)
+
+:1216 = drawNumDownLeft n -- like drawNum, but drawing in the third quadrant (nonpositive x and y). If n < 0, the extra pixel extends just into the second quadrant.
+:1217 = drawNumSize n size -- like drawNum, but don't autocompute the best square size
+:1218 = drawNums ns -- draw a list of numbers `ns` in a row.
+:1220 = concatImages imgs x0 -- combine the list of images `imgs` into a single image, arranged horizontally starting at offset x0, separated by 2px gaps, assuming each img uses only nonnegative x coordinates
+:1221 = concatImagesGaps imgs x0 gaps -- like concatImages, but after each image in `imgs`, add extra horizontal space equal to the corresponding element of `gaps`
+:1222 = decompressThenConcatImages cimgs -- concatImages (map cimgs decompress) 0
+:1224 = bbox img -- Return the bounding box around the given image, which must not be blank.
+:1225 = decompress cimg -- convert bitmapped ("compressed") image to list of points
+
+-- . . . .
+
+:1454 = hasRow3 grid start step color -- true if `color` has three in a row starting at `grid[start]`.
+:1455 = isWinner grid color -- true if `color` has won a game of tic-tac-toe in `grid`
+:1456 = hasHorizRow3 grid color -- true if `color` has three in a row horizontaly in `grid`
+:1457 = hasVertRow3 grid color -- true if `color` has three in a row vertically in `grid`
+:1458 = isGameOver grid -- true if the game of tic-tac-toe in `grid` is over
+
