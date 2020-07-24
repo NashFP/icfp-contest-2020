@@ -16,6 +16,9 @@ data LcExpr =
   | LcLambda String LcExpr
   | LcApply LcExpr LcExpr
 
+isConstant (LcConstant _) = True
+isConstant _ = False
+
 instance Show LcExpr where
   showsPrec p (LcConstant i) = showParen (i < 0 && p > 0) $ showString $ show i
   showsPrec _ (LcIdent name) = showString name
