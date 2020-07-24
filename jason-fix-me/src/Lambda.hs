@@ -27,16 +27,31 @@ instance Show LcExpr where
 renderLambda left (LcLambda name body) = renderLambda (left ++ " " ++ name) body
 renderLambda left body = "\\" ++ left ++ " -> " ++ show body
 
-showApply p f@(LcApply (LcIdent name) argLeft) argRight = case lookup name operators of
-  Just (op, pLeft, pRight) -> showParen (p >= max pRight pLeft) $
-    showsPrec pLeft argLeft . showString (" " ++ op ++ " ") . showsPrec pRight argRight
-  Nothing -> showApplyBasic p f argRight
+showApply :: Int -> LcExpr -> LcExpr -> ShowS
+-- Render some kinds of addition as subtraction
+showApply p (LcApply (LcIdent "add") (LcConstant x)) argRight | x < 0 =
+  showApply p (LcApply (LcIdent "sub") argRight) (LcConstant (-x))
+showApply p (LcApply (LcIdent "add") argLeft) (LcConstant x) | x < 0 =
+  showApply p (LcApply (LcIdent "sub") argLeft) (LcConstant (-x))
+showApply p (LcApply (LcIdent "add") argLeft) (LcApply (LcIdent "neg") argRight) =
+  showApply p (LcApply (LcIdent "sub") argLeft) argRight
+showApply p (LcApply (LcIdent "add") (LcApply (LcIdent "neg") argLeft)) argRight =
+  showApply p (LcApply (LcIdent "sub") argRight) argLeft
+-- Use infix operator syntax!
+showApply p f@(LcApply (LcIdent name) argLeft) argRight =
+  case lookup name operators of
+    Just (op, pLeft, pRight) ->
+      showParen (p > min pRight pLeft) $
+        showsPrec pLeft argLeft . showString (" " ++ op ++ " ") . showsPrec pRight argRight
+    Nothing ->
+      showApplyBasic p f argRight
 showApply p f x = showApplyBasic p f x
 
 showApplyBasic p f x = showParen (p > 9) $ showsPrec 9 f . showString " " . showsPrec 10 x
 
 operators = [
   ("add", ("+", 6, 6)),
+  ("sub", ("-", 6, 7)),
   ("mul", ("*", 7, 7)),
   ("lt", ("<", 4, 5)),
   ("eq", ("==", 4, 5)),
